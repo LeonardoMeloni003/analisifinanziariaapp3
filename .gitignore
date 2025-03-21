@@ -1,0 +1,18 @@
+# Distribuzioni e build
+dist/
+build/
+*.spec
+*.exe
+
+# Ambienti virtuali
+env/
+venv/
+
+# File temporanei e cache
+__pycache__/
+*.pyc
+*.log
+
+# File di sistema
+.DS_Store
+Thumbs.db
