@@ -1,4 +1,6 @@
 import streamlit as st
+import pandas as pd
+import matplotlib.pyplot as plt
 
 # --- CONFIGURAZIONE ---
 PASSWORD = "analisi2024"
@@ -25,20 +27,61 @@ st.title("📊 Analisi Finanziaria")
 st.markdown("""
 Benvenuto nell'applicazione di **analisi finanziaria**.
 
-Usa il menu a sinistra per navigare tra le sezioni:
-- 📁 Carica i tuoi dati
-- 📈 Visualizza grafici
-- 📄 Esporta risultati
+Usa il menu a sinistra per inserire i dati e visualizzare i risultati.
 
 🔐 L’accesso è protetto da password condivisa.
 """)
 
-# Esempio di layout iniziale con colonne
-col1, col2 = st.columns(2)
+# --- SIDEBAR PER INPUT ---
+st.sidebar.header("Inserisci i dati")
 
-with col1:
-    st.subheader("Come iniziare")
-    st.write("1. Carica il tuo file Excel o CSV\n2. Analizza i dati con i grafici\n3. Esporta il report se necessario")
+# Numero di anni da analizzare
+num_anni = st.sidebar.number_input("Numero di anni", min_value=1, max_value=10, value=4)
 
-with col2:
-    st.image("https://static.streamlit.io/examples/dice.jpg", caption="Esempio di visualizzazione")
+# Inserimento degli anni
+anni = []
+for i in range(num_anni):
+    anno = st.sidebar.number_input(f"Anno {i + 1}", min_value=2000, max_value=2100, value=2020 + i)
+    anni.append(anno)
+
+# Inserimento dei ricavi
+ricavi = []
+for i in range(num_anni):
+    ricavo = st.sidebar.number_input(f"Ricavi Anno {anni[i]}", min_value=0, value=1000000)
+    ricavi.append(ricavo)
+
+# Inserimento dei costi
+costi = []
+for i in range(num_anni):
+    costo = st.sidebar.number_input(f"Costi Anno {anni[i]}", min_value=0, value=1000000)
+    costi.append(costo)
+
+# Calcolo dell'utile netto
+utile_netto = [r - c for r, c in zip(ricavi, costi)]
+
+# Creazione del DataFrame
+df = pd.DataFrame({"Anno": anni, "Ricavi": ricavi, "Costi": costi, "Utile Netto": utile_netto})
+
+# Visualizzazione tabella
+st.write("### 📋 Dati Inseriti")
+st.dataframe(df)
+
+# --- GRAFICO A BARRE ---
+fig, ax = plt.subplots(figsize=(10, 5))
+bar_width = 0.3
+index = range(len(anni))
+
+ax.bar([i - bar_width for i in index], ricavi, width=bar_width, color='blue', label='Ricavi')
+ax.bar(index, costi, width=bar_width, color='red', label='Costi')
+ax.bar([i + bar_width for i in index], utile_netto, width=bar_width, color='green', label='Utile Netto')
+
+ax.set_xticks(index)
+ax.set_xticklabels(anni)
+ax.set_xlabel("Anno")
+ax.set_ylabel("Valore (€)")
+ax.set_title("Andamento Ricavi, Costi e Utile Netto")
+ax.legend()
+ax.grid(True)
+
+st.pyplot(fig)
+
