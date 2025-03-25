@@ -86,12 +86,18 @@ ax.legend()
 ax.grid(axis='y')  # Solo linee orizzontali
 
 
-st.pyplot(fig)
-
 # --- GRAFICO A LINEE DELL'UTILE NETTO ---
 st.write("### 📈 Andamento Utile Netto")
 st.write("DEBUG - Utile Netto:", utile_netto)
 
-fig_line, ax_line = plt.subplots(figsize=(10, 4))
-ax_line.plot(anni, utile_netto, marker="o", linestyle='-', color="green", linewidth=2)
-ax_line.set_title("Andamento dell'Utile Netto")
+try:
+    fig_line, ax_line = plt.subplots(figsize=(10, 4))
+    ax_line.plot(anni, utile_netto, marker="o", linestyle='-', color="green", linewidth=2)
+    ax_line.set_title("Andamento dell'Utile Netto")
+    ax_line.set_xlabel("Anno")
+    ax_line.set_ylabel("Utile Netto (€)")
+    ax_line.grid(True)
+
+    st.pyplot(fig_line)
+except Exception as e:
+    st.error(f"❌ Errore nella generazione del grafico a linee: {e}")
