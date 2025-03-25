@@ -10,7 +10,7 @@ from PIL import Image
 PASSWORD = "analisi2024"
 
 # --- LOGIN ---
-def check_password()
+def check_password():
 
 # --- SFONDO BUSINESS ---
 st.markdown(
