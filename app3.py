@@ -67,8 +67,9 @@ df = pd.DataFrame({"Anno": anni, "Ricavi": ricavi, "Costi": costi, "Utile Netto"
 # Visualizzazione tabella
 st.write("### 📋 Dati Inseriti")
 st.dataframe(df)
-
 # --- GRAFICO A BARRE ---
+st.write("### 📊 Confronto Ricavi, Costi e Utile Netto")
+
 fig, ax = plt.subplots(figsize=(10, 5))
 bar_width = 0.3
 index = range(len(anni))
@@ -83,8 +84,9 @@ ax.set_xlabel("Anno")
 ax.set_ylabel("Valore (€)")
 ax.set_title("Andamento Ricavi, Costi e Utile Netto")
 ax.legend()
-ax.grid(axis='y')  # Solo linee orizzontali
+ax.grid(axis='y')  # solo linee orizzontali
 
+st.pyplot(fig)
 
 # --- GRAFICO A LINEE DELL'UTILE NETTO ---
 st.write("### 📈 Andamento Utile Netto")
@@ -100,4 +102,5 @@ try:
 
     st.pyplot(fig_line)
 except Exception as e:
-    st.error(f"❌ Errore nella generazione del grafico a linee: {e}")
+    st.error(f\"❌ Errore nella generazione del grafico a linee: {e}\")
+
