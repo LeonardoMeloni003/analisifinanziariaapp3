@@ -83,12 +83,14 @@ ax.set_xlabel("Anno")
 ax.set_ylabel("Valore (€)")
 ax.set_title("Andamento Ricavi, Costi e Utile Netto")
 ax.legend()
-ax.grid(True)
+ax.grid(axis='y')  # Solo linee orizzontali
+
 
 st.pyplot(fig)
 
 # --- GRAFICO A LINEE DELL'UTILE NETTO ---
 st.write("### 📈 Andamento Utile Netto")
+st.write("DEBUG - Utile Netto:", utile_netto)
 
 fig_line, ax_line = plt.subplots(figsize=(10, 4))
 ax_line.plot(anni, utile_netto, marker="o", linestyle='-', color="green", linewidth=2)
