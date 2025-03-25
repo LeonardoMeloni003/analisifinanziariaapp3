@@ -26,7 +26,7 @@ def check_password():
 check_password()
 
 # --- LOGO AZIENDALE ---
-logo = Image.open("WhatsApp Image 2025-03-25 at 12.18.38.jpeg")
+logo = Image.open("logo.jpg")
 st.image(logo, width=120)
 st.markdown("### **Serramenti Renato Orrù**")
 
@@ -144,4 +144,3 @@ st.download_button(
     file_name="grafici_analisi_finanziaria.pdf",
     mime="application/pdf"
 )
-
