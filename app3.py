@@ -3,18 +3,13 @@ import pandas as pd
 import matplotlib.pyplot as plt
 from io import BytesIO
 from matplotlib.backends.backend_pdf import PdfPages
+from PIL import Image
 
 # --- CONFIGURAZIONE ---
 PASSWORD = "analisi2024"
 
 # --- LOGIN ---
 def check_password():
-
-# --- LOGO AZIENDALE ---
-from PIL import Image
-logo = Image.open("WhatsApp Image 2025-03-25 at 12.18.38.jpeg")
-st.image(logo, width=120)
-st.markdown("### **Serramenti Renato Orrù**"):
     def password_entered():
         if st.session_state["password"] == PASSWORD:
             st.session_state["password_correct"] = True
@@ -29,6 +24,11 @@ st.markdown("### **Serramenti Renato Orrù**"):
         st.stop()
 
 check_password()
+
+# --- LOGO AZIENDALE ---
+logo = Image.open("WhatsApp Image 2025-03-25 at 12.18.38.jpeg")
+st.image(logo, width=120)
+st.markdown("### **Serramenti Renato Orrù**")
 
 # --- HOMEPAGE ---
 st.title("📊 Analisi Finanziaria - Serramenti Renato Orrù")
