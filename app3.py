@@ -1,4 +1,3 @@
-
 import streamlit as st
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -9,7 +8,13 @@ from matplotlib.backends.backend_pdf import PdfPages
 PASSWORD = "analisi2024"
 
 # --- LOGIN ---
-def check_password():
+def check_password()
+
+# --- LOGO AZIENDALE ---
+from PIL import Image
+logo = Image.open("WhatsApp Image 2025-03-25 at 12.18.38.jpeg")
+st.image(logo, width=120)
+st.markdown("### **Serramenti Renato Orrù**"):
     def password_entered():
         if st.session_state["password"] == PASSWORD:
             st.session_state["password_correct"] = True
@@ -139,3 +144,4 @@ st.download_button(
     file_name="grafici_analisi_finanziaria.pdf",
     mime="application/pdf"
 )
+
