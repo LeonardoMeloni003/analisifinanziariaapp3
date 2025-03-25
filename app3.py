@@ -1,3 +1,4 @@
+
 import streamlit as st
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -61,12 +62,31 @@ for i in range(num_anni):
 # Calcolo dell'utile netto
 utile_netto = [r - c for r, c in zip(ricavi, costi)]
 
-# Creazione del DataFrame
-df = pd.DataFrame({"Anno": anni, "Ricavi": ricavi, "Costi": costi, "Utile Netto": utile_netto})
+# --- INDICATORI FINANZIARI ---
+# Margine di profitto: utile netto / ricavi
+margine_profitto = [(u / r * 100) if r != 0 else 0 for u, r in zip(utile_netto, ricavi)]
+
+# Crescita % utile netto anno su anno
+crescita_utile = [0]
+for i in range(1, len(utile_netto)):
+    prec = utile_netto[i - 1]
+    crescita = ((utile_netto[i] - prec) / prec * 100) if prec != 0 else 0
+    crescita_utile.append(crescita)
+
+# --- CREAZIONE DEL DATAFRAME COMPLETO ---
+df = pd.DataFrame({
+    "Anno": anni,
+    "Ricavi": ricavi,
+    "Costi": costi,
+    "Utile Netto": utile_netto,
+    "Margine di Profitto (%)": margine_profitto,
+    "Crescita Utile Netto (%)": crescita_utile
+})
 
 # Visualizzazione tabella
-st.write("### 📋 Dati Inseriti")
+st.write("### 📋 Dati Inseriti e Indicatori")
 st.dataframe(df)
+
 # --- GRAFICO A BARRE ---
 st.write("### 📊 Confronto Ricavi, Costi e Utile Netto")
 
@@ -84,7 +104,7 @@ ax.set_xlabel("Anno")
 ax.set_ylabel("Valore (€)")
 ax.set_title("Andamento Ricavi, Costi e Utile Netto")
 ax.legend()
-ax.grid(axis='y')  # solo linee orizzontali
+ax.grid(axis='y')
 
 st.pyplot(fig)
 
@@ -103,4 +123,17 @@ try:
 except Exception as e:
     st.error(f"❌ Errore nella generazione del grafico a linee: {e}")
 
+# --- SALVATAGGIO ONLINE ---
+def salva_su_google_sheet(df):
+    for _, riga in df.iterrows():
+        response = requests.post(
+            SHEETBEST_URL,
+            json=riga.to_dict()
+        )
+        if response.status_code == 200:
+            st.success("✅ Dati salvati online con successo!")
+        else:
+            st.error("❌ Errore durante il salvataggio online.")
 
+if st.button("📤 Salva dati online"):
+    salva_su_google_sheet(df)
