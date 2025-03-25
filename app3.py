@@ -2,7 +2,7 @@
 import streamlit as st
 import pandas as pd
 import matplotlib.pyplot as plt
-import requests  # <-- Per invio dati online
+import requests
 from io import BytesIO
 from matplotlib.backends.backend_pdf import PdfPages
 
@@ -28,12 +28,11 @@ def check_password():
 check_password()
 
 # --- HOMEPAGE ---
-st.title("📊 Analisi Finanziaria")
+st.title("📊 Analisi Finanziaria - Serramenti Renato Orrù")
 st.markdown("""
 Benvenuto nell'applicazione di **analisi finanziaria**.
 
-Usa il menu a sinistra per inserire i dati e visualizzare i risultati.
-
+🔹 **Azienda analizzata:** Serramenti Renato Orrù  
 🔐 L’accesso è protetto da password condivisa.
 """)
 
@@ -93,6 +92,7 @@ st.dataframe(df)
 st.write("### 📊 Confronto Ricavi, Costi e Utile Netto")
 
 fig, ax = plt.subplots(figsize=(10, 5))
+fig.suptitle("Serramenti Renato Orrù", fontsize=14)
 bar_width = 0.3
 index = range(len(anni))
 
@@ -115,6 +115,7 @@ st.write("### 📈 Andamento Utile Netto")
 
 try:
     fig_line, ax_line = plt.subplots(figsize=(10, 4))
+    fig_line.suptitle("Serramenti Renato Orrù", fontsize=14)
     ax_line.plot(anni, utile_netto, marker="o", linestyle='-', color="green", linewidth=2)
     ax_line.set_title("Andamento dell'Utile Netto")
     ax_line.set_xlabel("Anno")
