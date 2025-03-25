@@ -2,13 +2,11 @@
 import streamlit as st
 import pandas as pd
 import matplotlib.pyplot as plt
-import requests
 from io import BytesIO
 from matplotlib.backends.backend_pdf import PdfPages
 
 # --- CONFIGURAZIONE ---
 PASSWORD = "analisi2024"
-SHEETBEST_URL = "https://api.sheetbest.com/sheets/30338c77-0109-4636-98fb-48337f3546d0"
 
 # --- LOGIN ---
 def check_password():
@@ -84,6 +82,9 @@ df = pd.DataFrame({
     "Crescita Utile Netto (%)": crescita_utile
 })
 
+# --- SALVATAGGIO IN MEMORIA SESSIONE ---
+st.session_state["dati_azienda"] = df
+
 # Visualizzazione tabella
 st.write("### 📋 Dati Inseriti e Indicatori")
 st.dataframe(df)
@@ -138,18 +139,3 @@ st.download_button(
     file_name="grafici_analisi_finanziaria.pdf",
     mime="application/pdf"
 )
-
-# --- SALVATAGGIO ONLINE ---
-def salva_su_google_sheet(df):
-    for _, riga in df.iterrows():
-        response = requests.post(
-            SHEETBEST_URL,
-            json=riga.to_dict()
-        )
-        if response.status_code == 200:
-            st.success("✅ Dati salvati online con successo!")
-        else:
-            st.error("❌ Errore durante il salvataggio online.")
-
-if st.button("📤 Salva dati online"):
-    salva_su_google_sheet(df)
