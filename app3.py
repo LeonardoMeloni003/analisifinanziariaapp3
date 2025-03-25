@@ -1,3 +1,4 @@
+
 import streamlit as st
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -10,19 +11,6 @@ PASSWORD = "analisi2024"
 
 # --- LOGIN ---
 def check_password():
-
-# --- SFONDO BUSINESS ---
-st.markdown(
-    """
-    <style>
-    .stApp {
-        background: linear-gradient(135deg, #f4f7fa 0%, #d9e2ec 100%);
-        background-attachment: fixed;
-    }
-    </style>
-    """,
-    unsafe_allow_html=True
-):
     def password_entered():
         if st.session_state["password"] == PASSWORD:
             st.session_state["password_correct"] = True
