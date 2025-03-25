@@ -8,7 +8,7 @@ from matplotlib.backends.backend_pdf import PdfPages
 PASSWORD = "analisi2024"
 
 # --- LOGIN ---
-def check_password()
+def check_password():
 
 # --- LOGO AZIENDALE ---
 from PIL import Image
