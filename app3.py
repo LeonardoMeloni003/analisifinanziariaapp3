@@ -90,7 +90,6 @@ st.pyplot(fig)
 
 # --- GRAFICO A LINEE DELL'UTILE NETTO ---
 st.write("### 📈 Andamento Utile Netto")
-st.write("DEBUG - Utile Netto:", utile_netto)
 
 try:
     fig_line, ax_line = plt.subplots(figsize=(10, 4))
