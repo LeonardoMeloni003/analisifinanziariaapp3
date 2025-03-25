@@ -3,6 +3,8 @@ import streamlit as st
 import pandas as pd
 import matplotlib.pyplot as plt
 import requests  # <-- Per invio dati online
+from io import BytesIO
+from matplotlib.backends.backend_pdf import PdfPages
 
 # --- CONFIGURAZIONE ---
 PASSWORD = "analisi2024"
@@ -122,6 +124,19 @@ try:
     st.pyplot(fig_line)
 except Exception as e:
     st.error(f"❌ Errore nella generazione del grafico a linee: {e}")
+
+# --- DOWNLOAD GRAFICI IN PDF ---
+pdf_buffer = BytesIO()
+with PdfPages(pdf_buffer) as pdf:
+    pdf.savefig(fig)
+    pdf.savefig(fig_line)
+
+st.download_button(
+    label="📄 Scarica grafici in PDF",
+    data=pdf_buffer.getvalue(),
+    file_name="grafici_analisi_finanziaria.pdf",
+    mime="application/pdf"
+)
 
 # --- SALVATAGGIO ONLINE ---
 def salva_su_google_sheet(df):
