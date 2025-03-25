@@ -1,4 +1,3 @@
-
 import streamlit as st
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -87,6 +86,13 @@ ax.legend()
 ax.grid(True)
 
 st.pyplot(fig)
+
+# --- GRAFICO A LINEE DELL'UTILE NETTO ---
+st.write("### 📈 Andamento Utile Netto")
+
+fig_line, ax_line = plt.subplots(figsize=(10, 4))
+ax_line.plot(anni, utile_netto, marker="o", linestyle='-', color="green", linewidth=2)
+ax_line.set_title("Andamento dell
 
 # --- SALVATAGGIO ONLINE ---
 
