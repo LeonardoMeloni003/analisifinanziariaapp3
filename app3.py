@@ -92,23 +92,4 @@ st.write("### 📈 Andamento Utile Netto")
 
 fig_line, ax_line = plt.subplots(figsize=(10, 4))
 ax_line.plot(anni, utile_netto, marker="o", linestyle='-', color="green", linewidth=2)
-ax_line.set_title("Andamento dell
-
-# --- SALVATAGGIO ONLINE ---
-
-def salva_su_google_sheet(df):
-    for _, riga in df.iterrows():
-        response = requests.post(
-            SHEETBEST_URL,
-            json=riga.to_dict()
-        )
-        if response.status_code == 200:
-            st.success("✅ Dati salvati online con successo!")
-        else:
-            st.error("❌ Errore durante il salvataggio online.")
-
-if st.button("📤 Salva dati online"):
-    if "INSERISCI_LA_TUA_URL_QUA" in SHEETBEST_URL:
-        st.warning("⚠️ Inserisci il tuo link Sheet.best in alto nel codice!")
-    else:
-        salva_su_google_sheet(df)
+ax_line.set_title("Andamento dell'Utile Netto")
