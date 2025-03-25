@@ -102,5 +102,6 @@ try:
 
     st.pyplot(fig_line)
 except Exception as e:
-    st.error(f\"❌ Errore nella generazione del grafico a linee: {e}\")
+    st.error(f"❌ Errore nella generazione del grafico a linee: {e}")
+
 
