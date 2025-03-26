@@ -146,14 +146,7 @@ with tab1:
             headers=headers,
             json=dati
         )
-        supabase.table("dati_finanziari").insert({
-            "anno": int(row["Anno"]),
-            "ricavi": float(row["Ricavi"]),
-            "costi": float(row["Costi"]),
-            "utile_netto": float(row["Utile Netto"]),
-            "margine": float(row["Margine di Profitto (%)"]),
-            "crescita": float(row["Crescita Utile Netto (%)"])
-        }).execute()
+        
 
     st.write("### 📋 Dati Inseriti e Indicatori")
     st.dataframe(df)
