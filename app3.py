@@ -6,6 +6,12 @@ from matplotlib.backends.backend_pdf import PdfPages
 from PIL import Image
 
 # --- CONFIGURAZIONE ---
+from supabase import create_client, Client
+
+SUPABASE_URL = "https://fpblplgqvekuekorumkr.supabase.co"
+SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZwYmxwbGdxdmVrdWVrb3J1bWtyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDI5NzY0MjAsImV4cCI6MjA1ODU1MjQyMH0.oPFXbOcbbhqOqkpOYyXJ2PLaXLyCwHdC-sWZ_186k0g"
+
+supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 PASSWORD = "analisi2024"
 
 # --- LOGIN ---
@@ -67,6 +73,21 @@ if os.path.exists(data_path):
 else:
     df = None
 
+# --- CARICAMENTO DATI DA SUPABASE ---
+data = supabase.table("dati_finanziari").select("*").execute()
+
+if data.data:
+    df_supabase = pd.DataFrame(data.data)
+    df_supabase = df_supabase.sort_values("anno")
+    anni = df_supabase["anno"].tolist()
+    ricavi = df_supabase["ricavi"].tolist()
+    costi = df_supabase["costi"].tolist()
+    utile_netto = df_supabase["utile_netto"].tolist()
+    margine_profitto = df_supabase["margine"].tolist()
+    crescita_utile = df_supabase["crescita"].tolist()
+else:
+    df_supabase = None
+
 # --- TABS ---
 tab1, tab2, tab3 = st.tabs(["📥 Inserimento Dati", "📈 Grafici", "📄 Download PDF"])
 
@@ -97,7 +118,17 @@ with tab1:
     df["Variazione Costi (%)"] = df["Costi"].pct_change() * 100
 
     st.session_state["dati_azienda"] = df
-    df.to_csv("dati_salvati.csv", index=False)
+
+    # Salvataggio su Supabase
+    for _, row in df.iterrows():
+        supabase.table("dati_finanziari").insert({
+            "anno": int(row["Anno"]),
+            "ricavi": float(row["Ricavi"]),
+            "costi": float(row["Costi"]),
+            "utile_netto": float(row["Utile Netto"]),
+            "margine": float(row["Margine di Profitto (%)"]),
+            "crescita": float(row["Crescita Utile Netto (%)"])
+        }).execute()
 
     st.write("### 📋 Dati Inseriti e Indicatori")
     st.dataframe(df)
