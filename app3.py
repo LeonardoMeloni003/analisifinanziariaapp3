@@ -125,15 +125,47 @@ with tab2:
 
 with tab3:
     if "dati_azienda" in st.session_state:
-        st.write("### 📄 Scarica il report in PDF")
-        pdf_buffer = BytesIO()
-        with PdfPages(pdf_buffer) as pdf:
+        st.write("### 📄 Scarica i report in PDF")
+        df = st.session_state["dati_azienda"]
+
+        # --- PDF GRAFICI ---
+        grafici_buffer = BytesIO()
+        with PdfPages(grafici_buffer) as pdf:
             pdf.savefig(fig)
             pdf.savefig(fig_line)
 
         st.download_button(
-            label="📥 Scarica grafici in PDF",
-            data=pdf_buffer.getvalue(),
+            label="📥 Scarica PDF Grafici",
+            data=grafici_buffer.getvalue(),
+            file_name="grafici_analisi_finanziaria.pdf",
+            mime="application/pdf"
+        )
+
+        # --- PDF TABELLA DATI ---
+        dati_buffer = BytesIO()
+        with PdfPages(dati_buffer) as pdf:
+            fig_table, ax_table = plt.subplots(figsize=(12, 3))
+            ax_table.axis('off')
+            table = ax_table.table(
+                cellText=df.values,
+                colLabels=df.columns,
+                cellLoc='center',
+                loc='center'
+            )
+            table.auto_set_font_size(False)
+            table.set_fontsize(8)
+            table.scale(1, 1.5)
+            pdf.savefig(fig_table, bbox_inches='tight')
+
+        st.download_button(
+            label="📥 Scarica PDF Tabella",
+            data=dati_buffer.getvalue(),
+            file_name="tabella_analisi_finanziaria.pdf",
+            mime="application/pdf"
+        ),
+            file_name="report_analisi_finanziaria.pdf",
+            mime="application/pdf"
+        ),
             file_name="grafici_analisi_finanziaria.pdf",
             mime="application/pdf"
         )
