@@ -79,7 +79,7 @@ else:
 
 # --- CARICAMENTO DATI DA SUPABASE ---
 response = requests.get(
-    f"{SUPABASE_URL}/rest/v1/dati_finanziari?select=*",
+    f"{SUPABASE_URL}/rest/v1/analisi_finanziaria?select=*",
     headers=headers
 )
 
@@ -142,7 +142,7 @@ with tab1:
             "crescita": float(row["Crescita Utile Netto (%)"])
         }
         requests.post(
-            f"{SUPABASE_URL}/rest/v1/dati_finanziari",
+            f"{SUPABASE_URL}/rest/v1/analisi_finanziaria",
             headers=headers,
             json=dati
         )
