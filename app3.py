@@ -79,7 +79,7 @@ else:
 
 # --- CARICAMENTO DATI DA SUPABASE ---
 response = requests.get(
-    f"{SUPABASE_URL}/rest/v1/analisi_finanziaria?select=*",
+    f"{SUPABASE_URL}/rest/v1/dati%20finanziari?select=*",
     headers=headers
 )
 
@@ -142,7 +142,7 @@ with tab1:
             "crescita": float(row["Crescita Utile Netto (%)"])
         }
         requests.post(
-            f"{SUPABASE_URL}/rest/v1/analisi_finanziaria",
+            f"{SUPABASE_URL}/rest/v1/dati%20finanziari",
             headers=headers,
             json=dati
         )
@@ -213,7 +213,7 @@ with tab3:
         st.download_button(
             label="📥 Scarica PDF Grafici",
             data=grafici_pdf,
-            file_name="grafici_analisi_finanziaria.pdf",
+            file_name="grafici_dati%20finanziari.pdf",
             mime="application/pdf"
         )
 
@@ -241,6 +241,6 @@ with tab3:
         st.download_button(
             label="📥 Scarica PDF Tabella",
             data=dati_pdf,
-            file_name="tabella_analisi_finanziaria.pdf",
+            file_name="tabella_dati%20finanziari.pdf",
             mime="application/pdf"
         )
