@@ -76,6 +76,11 @@ with tab1:
         "Crescita Utile Netto (%)": crescita_utile
     })
 
+    # Aggiunta colonne extra
+    df["Media Utile Netto (3 anni)"] = df["Utile Netto"].rolling(window=3).mean()
+    df["Variazione Ricavi (%)"] = df["Ricavi"].pct_change() * 100
+    df["Variazione Costi (%)"] = df["Costi"].pct_change() * 100
+
     st.session_state["dati_azienda"] = df
 
     st.write("### 📋 Dati Inseriti e Indicatori")
