@@ -3,6 +3,4 @@ pandas
 matplotlib
 numpy
 Pillow
-supabase-py==1.0.3
-httpx==0.23.3
 requests
