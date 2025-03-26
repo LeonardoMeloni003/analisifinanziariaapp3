@@ -52,6 +52,21 @@ Benvenuto nell'applicazione di **analisi finanziaria**.
 🔐 L’accesso è protetto da password condivisa.
 """)
 
+# --- SALVATAGGIO PERSISTENTE DATI ---
+import os
+
+data_path = "dati_salvati.csv"
+if os.path.exists(data_path):
+    df = pd.read_csv(data_path)
+    anni = df["Anno"].tolist()
+    ricavi = df["Ricavi"].tolist()
+    costi = df["Costi"].tolist()
+    utile_netto = df["Utile Netto"].tolist()
+    margine_profitto = df["Margine di Profitto (%)"].tolist()
+    crescita_utile = df["Crescita Utile Netto (%)"].tolist()
+else:
+    df = None
+
 # --- TABS ---
 tab1, tab2, tab3 = st.tabs(["📥 Inserimento Dati", "📈 Grafici", "📄 Download PDF"])
 
@@ -82,6 +97,7 @@ with tab1:
     df["Variazione Costi (%)"] = df["Costi"].pct_change() * 100
 
     st.session_state["dati_azienda"] = df
+    df.to_csv("dati_salvati.csv", index=False)
 
     st.write("### 📋 Dati Inseriti e Indicatori")
     st.dataframe(df)
