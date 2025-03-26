@@ -25,7 +25,21 @@ def check_password():
 
 check_password()
 
-# --- SFONDO BUSINESS (chiaro, elegante) ---
+# --- SFONDO BUSINESS ---
+st.markdown(
+    """
+    <style>
+    .stApp {
+        background: linear-gradient(to bottom right, #1e3c72, #2a5298);
+        background-attachment: fixed;
+    }
+    </style>
+    """,
+    unsafe_allow_html=True
+)
+
+# --- IMPOSTAZIONE TABS ---
+tab1, tab2, tab3 = st.tabs(["📥 Inserimento Dati", "📈 Grafici", "📄 Download PDF"]) (chiaro, elegante) ---
 st.markdown(
     """
     <style>
