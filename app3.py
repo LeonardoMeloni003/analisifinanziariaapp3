@@ -6,12 +6,16 @@ from matplotlib.backends.backend_pdf import PdfPages
 from PIL import Image
 
 # --- CONFIGURAZIONE ---
-from supabase import create_client, Client
+import requests
 
 SUPABASE_URL = "https://fpblplgqvekuekorumkr.supabase.co"
 SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZwYmxwbGdxdmVrdWVrb3J1bWtyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDI5NzY0MjAsImV4cCI6MjA1ODU1MjQyMH0.oPFXbOcbbhqOqkpOYyXJ2PLaXLyCwHdC-sWZ_186k0g"
 
-supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
+headers = {
+    "apikey": SUPABASE_KEY,
+    "Authorization": f"Bearer {SUPABASE_KEY}",
+    "Content-Type": "application/json"
+}
 PASSWORD = "analisi2024"
 
 # --- LOGIN ---
@@ -74,18 +78,26 @@ else:
     df = None
 
 # --- CARICAMENTO DATI DA SUPABASE ---
-data = supabase.table("dati_finanziari").select("*").execute()
+response = requests.get(
+    f"{SUPABASE_URL}/rest/v1/dati_finanziari?select=*",
+    headers=headers
+)
 
-if data.data:
-    df_supabase = pd.DataFrame(data.data)
-    df_supabase = df_supabase.sort_values("anno")
-    anni = df_supabase["anno"].tolist()
-    ricavi = df_supabase["ricavi"].tolist()
-    costi = df_supabase["costi"].tolist()
-    utile_netto = df_supabase["utile_netto"].tolist()
-    margine_profitto = df_supabase["margine"].tolist()
-    crescita_utile = df_supabase["crescita"].tolist()
+if response.status_code == 200:
+    data = response.json()
+    if data:
+        df_supabase = pd.DataFrame(data)
+        df_supabase = df_supabase.sort_values("anno")
+        anni = df_supabase["anno"].tolist()
+        ricavi = df_supabase["ricavi"].tolist()
+        costi = df_supabase["costi"].tolist()
+        utile_netto = df_supabase["utile_netto"].tolist()
+        margine_profitto = df_supabase["margine"].tolist()
+        crescita_utile = df_supabase["crescita"].tolist()
+    else:
+        df_supabase = None
 else:
+    st.error("❌ Errore nel recupero dei dati da Supabase")
     df_supabase = None
 
 # --- TABS ---
@@ -121,6 +133,19 @@ with tab1:
 
     # Salvataggio su Supabase
     for _, row in df.iterrows():
+        dati = {
+            "anno": int(row["Anno"]),
+            "ricavi": float(row["Ricavi"]),
+            "costi": float(row["Costi"]),
+            "utile_netto": float(row["Utile Netto"]),
+            "margine": float(row["Margine di Profitto (%)"]),
+            "crescita": float(row["Crescita Utile Netto (%)"])
+        }
+        requests.post(
+            f"{SUPABASE_URL}/rest/v1/dati_finanziari",
+            headers=headers,
+            json=dati
+        )
         supabase.table("dati_finanziari").insert({
             "anno": int(row["Anno"]),
             "ricavi": float(row["Ricavi"]),
