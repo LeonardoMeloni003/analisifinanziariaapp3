@@ -2,4 +2,6 @@ streamlit
 pandas
 matplotlib
 numpy
+Pillow
 supabase-py
+httpx
