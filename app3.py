@@ -9,7 +9,20 @@ from PIL import Image
 PASSWORD = "analisi2024"
 
 # --- LOGIN ---
-def check_password():
+def check_password()
+
+# --- SFONDO BUSINESS (chiaro, elegante) ---
+st.markdown(
+    """
+    <style>
+    .stApp {
+        background: linear-gradient(to bottom right, #f4f7fa, #d9e2ec);
+        background-attachment: fixed;
+    }
+    </style>
+    """,
+    unsafe_allow_html=True
+):
     def password_entered():
         if st.session_state["password"] == PASSWORD:
             st.session_state["password_correct"] = True
@@ -144,4 +157,3 @@ st.download_button(
     file_name="grafici_analisi_finanziaria.pdf",
     mime="application/pdf"
 )
-
