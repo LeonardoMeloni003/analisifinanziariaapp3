@@ -132,13 +132,48 @@ with tab3:
         # --- PDF GRAFICI ---
         grafici_buffer = BytesIO()
         with PdfPages(grafici_buffer) as pdf:
+            pdf.infodict().update({
+                'Title': 'Report Grafici Analisi Finanziaria',
+                'Author': 'Serramenti Renato Orrù'
+            })
             pdf.savefig(fig)
             pdf.savefig(fig_line)
-        grafici_buffer.seek(0)
+        grafici_pdf = grafici_buffer.getvalue()
 
         st.download_button(
             label="📥 Scarica PDF Grafici",
-            data=grafici_buffer.getvalue(),
+            data=grafici_pdf,
+            file_name="grafici_analisi_finanziaria.pdf",
+            mime="application/pdf"
+        )
+
+        # --- PDF TABELLA DATI ---
+        dati_buffer = BytesIO()
+        with PdfPages(dati_buffer) as pdf:
+            pdf.infodict().update({
+                'Title': 'Report Dati Analisi Finanziaria',
+                'Author': 'Serramenti Renato Orrù'
+            })
+            fig_table, ax_table = plt.subplots(figsize=(12, 3))
+            ax_table.axis('off')
+            table = ax_table.table(
+                cellText=df.values,
+                colLabels=df.columns,
+                cellLoc='center',
+                loc='center'
+            )
+            table.auto_set_font_size(False)
+            table.set_fontsize(8)
+            table.scale(1, 1.5)
+            pdf.savefig(fig_table, bbox_inches='tight')
+        dati_pdf = dati_buffer.getvalue()
+
+        st.download_button(
+            label="📥 Scarica PDF Tabella",
+            data=dati_pdf,
+            file_name="tabella_analisi_finanziaria.pdf",
+            mime="application/pdf"
+        ),
             file_name="grafici_analisi_finanziaria.pdf",
             mime="application/pdf"
         )
