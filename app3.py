@@ -82,13 +82,16 @@ if "dati_azienda" not in st.session_state:
                 })
                 st.session_state["dati_azienda"] = df
 
-    # Ricarica dati aggiornati da Supabase dopo il salvataggio
+# 🔄 Ricarica i dati aggiornati da Supabase
+t ry:
     response = requests.get(f"{SUPABASE_URL}/rest/v1/dati%20finanziari?select=*", headers=headers)
     if response.status_code == 200:
         dati = response.json()
         if dati:
             df = pd.DataFrame(dati).sort_values("anno")
             st.session_state["dati_azienda"] = df
+except Exception as e:
+    st.warning(f"⚠️ Impossibile aggiornare i dati da Supabase: {e}")
     except Exception as e:
         st.warning(f"⚠️ Errore nel caricamento dei dati da Supabase: {e}")
 
