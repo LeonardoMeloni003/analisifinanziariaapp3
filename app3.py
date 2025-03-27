@@ -96,32 +96,22 @@ if st.button("Salva Dati"):
 st.write("### 📋 Dati Inseriti e Indicatori")
 st.dataframe(df_input)
 
-# --- GRAFICI ---
+# --- GRAFICO BARRE ---
 fig, ax = plt.subplots(figsize=(10, 5))
-ax.bar(df_input["anno"], df_input["utile_netto"], color='green')
-ax.set_title("Utile Netto")
+bar_width = 0.3
+index = range(len(df_input["anno"]))
+ax.bar([i - bar_width for i in index], df_input["ricavi"], width=bar_width, label='Ricavi', color='blue')
+ax.bar(index, df_input["costi"], width=bar_width, label='Costi', color='red')
+ax.bar([i + bar_width for i in index], df_input["utile_netto"], width=bar_width, label='Utile Netto', color='green')
+ax.set_xticks(index)
+ax.set_xticklabels(df_input["anno"])
+ax.legend()
 st.pyplot(fig)
 
 # --- GENERAZIONE PDF COMPLETO ---
-pdf = FPDF()
-pdf.add_page()
-pdf.set_font("Arial", size=12)
-pdf.cell(0, 10, "Report Finanziario Serramenti Renato Orrù", ln=True, align='C')
+pdf_buffer = BytesIO()
+with PdfPages(pdf_buffer) as pdf:
+    pdf.savefig(fig)
 
-pdf.cell(0, 10, "Grafico Utile Netto:", ln=True)
-img_path = tempfile.gettempdir() + "/grafico.png"
-fig.savefig(img_path)
-pdf.image(img_path, w=180)
-
-pdf.cell(0, 10, "Tabella dati inseriti:", ln=True)
-col_width = pdf.epw / len(df_input.columns)
-for col in df_input.columns:
-    pdf.cell(col_width, 10, col, border=1)
-pdf.ln()
-for _, row in df_input.iterrows():
-    for item in row:
-        pdf.cell(col_width, 10, str(item), border=1)
-    pdf.ln()
-
-pdf_output = pdf.output(dest='S').encode('latin1')
-st.download_button("📥 Scarica PDF Completo", pdf_output, "report_completo.pdf", "application/pdf")
+pdf_data = pdf_buffer.getvalue()
+st.download_button("📥 Scarica PDF Grafici", pdf_data, "grafici.pdf", "application/pdf")
