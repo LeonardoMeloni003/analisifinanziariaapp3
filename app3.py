@@ -60,6 +60,30 @@ Benvenuto nell'applicazione di **analisi finanziaria**.
 🔐 L’accesso è protetto da password condivisa.
 """)
 
+# --- CARICAMENTO DATI DA SUPABASE ALL'AVVIO ---
+if "dati_azienda" not in st.session_state:
+    try:
+        response = requests.get(
+            f"{SUPABASE_URL}/rest/v1/dati%20finanziari?select=*",
+            headers=headers
+        )
+        if response.status_code == 200:
+            data = response.json()
+            if data:
+                df = pd.DataFrame(data)
+                df = df.sort_values("anno")
+                df = df.rename(columns={
+                    "anno": "Anno",
+                    "ricavi": "Ricavi",
+                    "costi": "Costi",
+                    "utile_netto": "Utile Netto",
+                    "margine": "Margine di Profitto (%)",
+                    "crescita": "Crescita Utile Netto (%)"
+                })
+                st.session_state["dati_azienda"] = df
+    except Exception as e:
+        st.warning(f"⚠️ Errore nel caricamento dei dati da Supabase: {e}")
+
 # --- TABS ---
 tab1, tab2, tab3 = st.tabs(["📥 Inserimento Dati", "📈 Grafici", "📄 Download PDF"])
 
@@ -86,7 +110,6 @@ with tab1:
 
     st.session_state["dati_azienda"] = df
 
-    # Salvataggio su Supabase con debug
     for _, row in df.iterrows():
         dati = {
             "anno": int(row["Anno"]),
