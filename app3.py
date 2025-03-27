@@ -119,8 +119,10 @@ with tab1:
             "margine": float(row["Margine di Profitto (%)"]),
             "crescita": float(row["Crescita Utile Netto (%)"])
         }
-        response = requests.post(
-            f"{SUPABASE_URL}/rest/v1/dati%20finanziari?on_conflict=anno",
+
+        # PATCH con filtro su anno per aggiornare o creare se non esiste
+        response = requests.patch(
+            f"{SUPABASE_URL}/rest/v1/dati%20finanziari?anno=eq.{dati['anno']}",
             headers=headers,
             json=dati
         )
