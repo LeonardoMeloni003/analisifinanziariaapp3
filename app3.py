@@ -83,7 +83,7 @@ if "dati_azienda" not in st.session_state:
                 st.session_state["dati_azienda"] = df
 
 # 🔄 Ricarica i dati aggiornati da Supabase
-t ry:
+try:
     response = requests.get(f"{SUPABASE_URL}/rest/v1/dati%20finanziari?select=*", headers=headers)
     if response.status_code == 200:
         dati = response.json()
