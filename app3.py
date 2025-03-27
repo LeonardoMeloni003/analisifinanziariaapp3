@@ -141,11 +141,13 @@ with tab1:
             "margine": float(row["Margine di Profitto (%)"]),
             "crescita": float(row["Crescita Utile Netto (%)"])
         }
-        requests.post(
+        response = requests.post(
             f"{SUPABASE_URL}/rest/v1/dati%20finanziari",
             headers=headers,
             json=dati
         )
+        if response.status_code not in [200, 201]:
+            st.warning(f"⚠️ Errore nel salvataggio dei dati: {response.status_code} - {response.text}")
         
 
     st.write("### 📋 Dati Inseriti e Indicatori")
