@@ -90,6 +90,8 @@ try:
         if dati:
             df = pd.DataFrame(dati).sort_values("anno")
             st.session_state["dati_azienda"] = df
+    else:
+        raise Exception(f"Errore HTTP {response.status_code}: {response.text}")
 except Exception as e:
     st.warning(f"⚠️ Impossibile aggiornare i dati da Supabase: {e}")
     except Exception as e:
