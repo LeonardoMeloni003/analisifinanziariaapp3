@@ -142,7 +142,7 @@ with tab1:
             "crescita": float(row["Crescita Utile Netto (%)"])
         }
         response = requests.post(
-            f"{SUPABASE_URL}/rest/v1/dati%20finanziari",
+            f"{SUPABASE_URL}/rest/v1/dati%20finanziari?on_conflict=anno",
             headers=headers,
             json=dati
         )
