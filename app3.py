@@ -5,8 +5,9 @@ from io import BytesIO
 from matplotlib.backends.backend_pdf import PdfPages
 from PIL import Image
 import requests
+from fpdf import FPDF
 
-# --- CONFIGURAZIONE ---
+# --- CONFIGURAZIONE SUPABASE ---
 SUPABASE_URL = "https://fpblplgqvekuekorumkr.supabase.co"
 SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZwYmxwbGdxdmVrdWVrb3J1bWtyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDI5NzY0MjAsImV4cCI6MjA1ODU1MjQyMH0.oPFXbOcbbhqOqkpOYyXJ2PLaXLyCwHdC-sWZ_186k0g"
 headers = {
@@ -88,7 +89,7 @@ with tab1:
     margine_profitto = [(u / r * 100) if r != 0 else 0 for u, r in zip(utile_netto, ricavi)]
     crescita_utile = [0] + [((utile_netto[i] - utile_netto[i - 1]) / utile_netto[i - 1] * 100) if utile_netto[i - 1] != 0 else 0 for i in range(1, len(utile_netto))]
 
-    df = pd.DataFrame({
+    df_input = pd.DataFrame({
         "anno": anni,
         "ricavi": ricavi,
         "costi": costi,
@@ -97,15 +98,14 @@ with tab1:
         "crescita": crescita_utile
     })
 
-    st.session_state["dati_azienda"] = df
-
-    for _, dati in df.iterrows():
-        requests.patch(f"{SUPABASE_URL}/rest/v1/dati%20finanziari?anno=eq.{dati['anno']}", headers=headers, json=dati.to_dict())
-
-    st.session_state["dati_azienda"] = load_data()
+    if st.button("Salva Dati"):
+        for _, dati in df_input.iterrows():
+            requests.post(f"{SUPABASE_URL}/rest/v1/dati%20finanziari", headers=headers, json=dati.to_dict())
+        st.session_state["dati_azienda"] = load_data()
+        st.success("✅ Dati salvati correttamente!")
 
     st.write("### 📋 Dati Inseriti e Indicatori")
-    st.dataframe(df)
+    st.dataframe(df_input)
 
 with tab2:
     if not df.empty:
@@ -122,14 +122,11 @@ with tab2:
         ax.legend()
         st.pyplot(fig)
 
-        fig_line, ax_line = plt.subplots(figsize=(10, 4))
-        ax_line.plot(df["anno"], df["utile_netto"], marker="o", linestyle='-', color="green")
-        st.pyplot(fig_line)
-
 with tab3:
-    buffer = BytesIO()
-    with PdfPages(buffer) as pdf:
-        fig.savefig(pdf, format='pdf')
-        fig_line.savefig(pdf, format='pdf')
-
-    st.download_button("📥 Scarica PDF Grafici", buffer.getvalue(), "report_grafici.pdf", "application/pdf")
+    pdf = FPDF()
+    pdf.add_page()
+    pdf.set_font("Arial", size=12)
+    for _, row in df.iterrows():
+        pdf.cell(200, 10, txt=str(row.to_dict()), ln=True)
+    pdf_output = pdf.output(dest='S').encode('latin1')
+    st.download_button("📥 Scarica PDF Dati", pdf_output, "report_dati.pdf", "application/pdf")
