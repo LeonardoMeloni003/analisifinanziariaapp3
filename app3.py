@@ -86,7 +86,7 @@ with tab1:
 
     st.session_state["dati_azienda"] = df
 
-    # Salvataggio su Supabase
+    # Salvataggio su Supabase con debug
     for _, row in df.iterrows():
         dati = {
             "anno": int(row["Anno"]),
@@ -103,8 +103,88 @@ with tab1:
         )
         if response.status_code >= 400:
             st.warning(f"⚠️ Errore nel salvataggio dei dati: {response.status_code} - {response.text}")
+        else:
+            st.success(f"✅ Dati salvati per l'anno {dati['anno']}")
 
     st.write("### 📋 Dati Inseriti e Indicatori")
     st.dataframe(df)
 
-# (Il resto del codice rimane invariato per la visualizzazione dei grafici e PDF)
+with tab2:
+    if "dati_azienda" in st.session_state:
+        df = st.session_state["dati_azienda"]
+        anni = df["Anno"].tolist()
+        ricavi = df["Ricavi"].tolist()
+        costi = df["Costi"].tolist()
+        utile_netto = df["Utile Netto"].tolist()
+
+        st.write("### 📊 Confronto Ricavi, Costi e Utile Netto")
+        fig, ax = plt.subplots(figsize=(10, 5))
+        fig.suptitle("Serramenti Renato Orrù", fontsize=14)
+        bar_width = 0.3
+        index = range(len(anni))
+
+        ax.bar([i - bar_width for i in index], ricavi, width=bar_width, color='blue', label='Ricavi')
+        ax.bar(index, costi, width=bar_width, color='red', label='Costi')
+        ax.bar([i + bar_width for i in index], utile_netto, width=bar_width, color='green', label='Utile Netto')
+
+        ax.set_xticks(index)
+        ax.set_xticklabels(anni)
+        ax.set_xlabel("Anno")
+        ax.set_ylabel("Valore (€)")
+        ax.set_title("Andamento Ricavi, Costi e Utile Netto")
+        ax.legend()
+        ax.grid(axis='y')
+
+        st.pyplot(fig)
+
+        st.write("### 📈 Andamento Utile Netto")
+        fig_line, ax_line = plt.subplots(figsize=(10, 4))
+        fig_line.suptitle("Serramenti Renato Orrù", fontsize=14)
+        ax_line.plot(anni, utile_netto, marker="o", linestyle='-', color="green", linewidth=2)
+        ax_line.set_title("Andamento dell'Utile Netto")
+        ax_line.set_xlabel("Anno")
+        ax_line.set_ylabel("Utile Netto (€)")
+        ax_line.grid(True)
+
+        st.pyplot(fig_line)
+
+with tab3:
+    if "dati_azienda" in st.session_state:
+        df = st.session_state["dati_azienda"]
+
+        st.write("### 📄 Scarica i report in PDF")
+
+        grafici_buffer = BytesIO()
+        with PdfPages(grafici_buffer) as pdf:
+            pdf.savefig(fig)
+            pdf.savefig(fig_line)
+        grafici_pdf = grafici_buffer.getvalue()
+
+        st.download_button(
+            label="📥 Scarica PDF Grafici",
+            data=grafici_pdf,
+            file_name="grafici_analisi_finanziaria.pdf",
+            mime="application/pdf"
+        )
+
+        dati_buffer = BytesIO()
+        with PdfPages(dati_buffer) as pdf:
+            fig_table, ax_table = plt.subplots(figsize=(12, 3))
+            ax_table.axis('off')
+            table = ax_table.table(
+                cellText=df.values,
+                colLabels=df.columns,
+                cellLoc='center',
+                loc='center')
+            table.auto_set_font_size(False)
+            table.set_fontsize(8)
+            table.scale(1, 1.5)
+            pdf.savefig(fig_table, bbox_inches='tight')
+        dati_pdf = dati_buffer.getvalue()
+
+        st.download_button(
+            label="📥 Scarica PDF Tabella",
+            data=dati_pdf,
+            file_name="tabella_analisi_finanziaria.pdf",
+            mime="application/pdf"
+        )
