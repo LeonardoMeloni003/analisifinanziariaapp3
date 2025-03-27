@@ -128,7 +128,7 @@ with tab1:
             st.warning(f"⚠️ Errore nel salvataggio dei dati: {response.status_code} - {response.text}")
         else:
             st.success(f"✅ Dati salvati per l'anno {dati['anno']}")
-            st.code(response.text)
+            st.code(response.text or "⚠️ Nessuna risposta ricevuta da Supabase")
 
     st.write("### 📋 Dati Inseriti e Indicatori")
     st.dataframe(df)
