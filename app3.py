@@ -94,6 +94,8 @@ try:
         raise Exception(f"Errore HTTP {response.status_code}: {response.text}")
 except Exception as e:
     st.warning(f"⚠️ Impossibile aggiornare i dati da Supabase: {e}")
+except Exception as e:
+    st.warning(f"⚠️ Impossibile aggiornare i dati da Supabase: {e}")
     except Exception as e:
         st.warning(f"⚠️ Errore nel caricamento dei dati da Supabase: {e}")
 
