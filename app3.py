@@ -89,6 +89,7 @@ with tab1:
     })
 
     if st.button("Salva Dati"):
+        requests.delete(f"{SUPABASE_URL}/rest/v1/dati%20finanziari?anno=gt.0", headers=headers)
         for _, dati in df_input.iterrows():
             requests.post(f"{SUPABASE_URL}/rest/v1/dati%20finanziari", headers=headers, json=dati.to_dict())
         st.session_state["dati_azienda"] = load_data()
@@ -98,22 +99,23 @@ with tab1:
     st.dataframe(df_input)
 
 with tab2:
-    fig, ax = plt.subplots(figsize=(10, 5))
-    bar_width = 0.3
-    index = range(len(df_input["anno"]))
-    ax.bar([i - bar_width for i in index], df_input["ricavi"], width=bar_width, label='Ricavi', color='blue')
-    ax.bar(index, df_input["costi"], width=bar_width, label='Costi', color='red')
-    ax.bar([i + bar_width for i in index], df_input["utile_netto"], width=bar_width, label='Utile Netto', color='green')
-    ax.set_xticks(index)
-    ax.set_xticklabels(df_input["anno"])
-    ax.legend()
-    st.pyplot(fig)
+    if not df_input.empty:
+        fig, ax = plt.subplots(figsize=(10, 5))
+        bar_width = 0.3
+        index = range(len(df_input["anno"]))
+        ax.bar([i - bar_width for i in index], df_input["ricavi"], width=bar_width, label='Ricavi', color='blue')
+        ax.bar(index, df_input["costi"], width=bar_width, label='Costi', color='red')
+        ax.bar([i + bar_width for i in index], df_input["utile_netto"], width=bar_width, label='Utile Netto', color='green')
+        ax.set_xticks(index)
+        ax.set_xticklabels(df_input["anno"])
+        ax.legend()
+        st.pyplot(fig)
 
-    fig_line, ax_line = plt.subplots(figsize=(10, 4))
-    ax_line.plot(df_input["anno"], df_input["utile_netto"], marker="o", linestyle='-', color="green")
-    ax_line.set_title("Andamento Utile Netto")
-    ax_line.grid(True)
-    st.pyplot(fig_line)
+        fig_line, ax_line = plt.subplots(figsize=(10, 4))
+        ax_line.plot(df_input["anno"], df_input["utile_netto"], marker="o", linestyle='-', color="green")
+        ax_line.set_title("Andamento Utile Netto")
+        ax_line.grid(True)
+        st.pyplot(fig_line)
 
 with tab3:
     pdf_buffer = BytesIO()
@@ -123,3 +125,4 @@ with tab3:
 
     pdf_data = pdf_buffer.getvalue()
     st.download_button("📥 Scarica PDF Grafici", pdf_data, "grafici.pdf", "application/pdf")
+
