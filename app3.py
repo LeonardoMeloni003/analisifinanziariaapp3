@@ -72,7 +72,7 @@ with tab1:
 
     df_input = st.session_state["dati_azienda"]
 
-    num_anni = st.sidebar.number_input("Numero di anni", min_value=1, max_value=10, value=len(df_input) if not df_input.empty else 4)
+    num_anni = st.sidebar.number_input("Numero di anni", min_value=1, max_value=10, value=int(len(df_input)) if not df_input.empty else 4)
 
     anni = [
         st.sidebar.number_input(f"Anno {i + 1}", min_value=2000, max_value=2100,
@@ -80,13 +80,13 @@ with tab1:
         for i in range(num_anni)
     ]
     ricavi = [
-        st.sidebar.number_input(f"Ricavi Anno {anni[i]}", min_value=0,
-        value=float(df_input.iloc[i]["ricavi"]) if i < len(df_input) else 1000000)
+        st.sidebar.number_input(f"Ricavi Anno {anni[i]}", min_value=0.0, step=1000.0,
+        value=float(df_input.iloc[i]["ricavi"]) if i < len(df_input) else 1000000.0)
         for i in range(num_anni)
     ]
     costi = [
-        st.sidebar.number_input(f"Costi Anno {anni[i]}", min_value=0,
-        value=float(df_input.iloc[i]["costi"]) if i < len(df_input) else 1000000)
+        st.sidebar.number_input(f"Costi Anno {anni[i]}", min_value=0.0, step=1000.0,
+        value=float(df_input.iloc[i]["costi"]) if i < len(df_input) else 1000000.0)
         for i in range(num_anni)
     ]
 
