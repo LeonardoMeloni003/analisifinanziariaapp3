@@ -67,7 +67,7 @@ tab1, tab2, tab3 = st.tabs(["📥 Inserimento Dati", "📈 Grafici", "📄 Downl
 with tab1:
     st.sidebar.header("Inserisci i dati")
 
-    if 'dati_azienda' not in st.session_state or st.button("Aggiorna Dati Salvati"):
+    if 'dati_azienda' not in st.session_state:
         st.session_state["dati_azienda"] = load_data()
 
     df_input = st.session_state["dati_azienda"]
@@ -76,17 +76,20 @@ with tab1:
 
     anni = [
         st.sidebar.number_input(f"Anno {i + 1}", min_value=2000, max_value=2100,
-        value=int(df_input.iloc[i]["anno"]) if i < len(df_input) else 2020 + i)
+        value=int(df_input.iloc[i]["anno"]) if i < len(df_input) else 2020 + i,
+        key=f"anno_{i}")
         for i in range(num_anni)
     ]
     ricavi = [
         st.sidebar.number_input(f"Ricavi Anno {anni[i]}", min_value=0.0, step=1000.0,
-        value=float(df_input.iloc[i]["ricavi"]) if i < len(df_input) else 1000000.0)
+        value=float(df_input.iloc[i]["ricavi"]) if i < len(df_input) else 1000000.0,
+        key=f"ricavi_{i}")
         for i in range(num_anni)
     ]
     costi = [
         st.sidebar.number_input(f"Costi Anno {anni[i]}", min_value=0.0, step=1000.0,
-        value=float(df_input.iloc[i]["costi"]) if i < len(df_input) else 1000000.0)
+        value=float(df_input.iloc[i]["costi"]) if i < len(df_input) else 1000000.0,
+        key=f"costi_{i}")
         for i in range(num_anni)
     ]
 
@@ -113,30 +116,3 @@ with tab1:
 
     st.write("### 📋 Dati Inseriti e Indicatori")
     st.dataframe(df_input)
-
-with tab2:
-    fig, ax = plt.subplots(figsize=(10, 5))
-    bar_width = 0.3
-    index = range(len(df_input["anno"]))
-    ax.bar([i - bar_width for i in index], df_input["ricavi"], width=bar_width, label='Ricavi', color='blue')
-    ax.bar(index, df_input["costi"], width=bar_width, label='Costi', color='red')
-    ax.bar([i + bar_width for i in index], df_input["utile_netto"], width=bar_width, label='Utile Netto', color='green')
-    ax.set_xticks(index)
-    ax.set_xticklabels(df_input["anno"])
-    ax.legend()
-    st.pyplot(fig)
-
-    fig_line, ax_line = plt.subplots(figsize=(10, 4))
-    ax_line.plot(df_input["anno"], df_input["utile_netto"], marker="o", linestyle='-', color="green")
-    ax_line.set_title("Andamento Utile Netto")
-    ax_line.grid(True)
-    st.pyplot(fig_line)
-
-with tab3:
-    pdf_buffer = BytesIO()
-    with PdfPages(pdf_buffer) as pdf:
-        pdf.savefig(fig)
-        pdf.savefig(fig_line)
-
-    pdf_data = pdf_buffer.getvalue()
-    st.download_button("📥 Scarica PDF Grafici", pdf_data, "grafici.pdf", "application/pdf")
