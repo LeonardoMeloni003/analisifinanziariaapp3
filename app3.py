@@ -61,19 +61,34 @@ def load_data():
         st.error("❌ Errore nel recupero dei dati da Supabase")
         return pd.DataFrame()
 
-df = load_data()
-st.session_state["dati_azienda"] = df
-
 # --- TABS ---
 tab1, tab2, tab3 = st.tabs(["📥 Inserimento Dati", "📈 Grafici", "📄 Download PDF"])
 
 with tab1:
     st.sidebar.header("Inserisci i dati")
 
-    num_anni = st.sidebar.number_input("Numero di anni", min_value=1, max_value=10, value=4)
-    anni = [st.sidebar.number_input(f"Anno {i + 1}", min_value=2000, max_value=2100, value=2020 + i) for i in range(num_anni)]
-    ricavi = [st.sidebar.number_input(f"Ricavi Anno {anni[i]}", min_value=0, value=1000000) for i in range(num_anni)]
-    costi = [st.sidebar.number_input(f"Costi Anno {anni[i]}", min_value=0, value=1000000) for i in range(num_anni)]
+    if 'dati_azienda' not in st.session_state or st.button("Aggiorna Dati Salvati"):
+        st.session_state["dati_azienda"] = load_data()
+
+    df_input = st.session_state["dati_azienda"]
+
+    num_anni = st.sidebar.number_input("Numero di anni", min_value=1, max_value=10, value=len(df_input) if not df_input.empty else 4)
+
+    anni = [
+        st.sidebar.number_input(f"Anno {i + 1}", min_value=2000, max_value=2100,
+        value=int(df_input.iloc[i]["anno"]) if i < len(df_input) else 2020 + i)
+        for i in range(num_anni)
+    ]
+    ricavi = [
+        st.sidebar.number_input(f"Ricavi Anno {anni[i]}", min_value=0,
+        value=float(df_input.iloc[i]["ricavi"]) if i < len(df_input) else 1000000)
+        for i in range(num_anni)
+    ]
+    costi = [
+        st.sidebar.number_input(f"Costi Anno {anni[i]}", min_value=0,
+        value=float(df_input.iloc[i]["costi"]) if i < len(df_input) else 1000000)
+        for i in range(num_anni)
+    ]
 
     utile_netto = [r - c for r, c in zip(ricavi, costi)]
     margine_profitto = [(u / r * 100) if r != 0 else 0 for u, r in zip(utile_netto, ricavi)]
@@ -92,6 +107,7 @@ with tab1:
         requests.delete(f"{SUPABASE_URL}/rest/v1/dati%20finanziari?anno=gt.0", headers=headers)
         for _, dati in df_input.iterrows():
             requests.post(f"{SUPABASE_URL}/rest/v1/dati%20finanziari", headers=headers, json=dati.to_dict())
+
         st.session_state["dati_azienda"] = load_data()
         st.success("✅ Dati salvati correttamente!")
 
@@ -99,23 +115,22 @@ with tab1:
     st.dataframe(df_input)
 
 with tab2:
-    if not df_input.empty:
-        fig, ax = plt.subplots(figsize=(10, 5))
-        bar_width = 0.3
-        index = range(len(df_input["anno"]))
-        ax.bar([i - bar_width for i in index], df_input["ricavi"], width=bar_width, label='Ricavi', color='blue')
-        ax.bar(index, df_input["costi"], width=bar_width, label='Costi', color='red')
-        ax.bar([i + bar_width for i in index], df_input["utile_netto"], width=bar_width, label='Utile Netto', color='green')
-        ax.set_xticks(index)
-        ax.set_xticklabels(df_input["anno"])
-        ax.legend()
-        st.pyplot(fig)
+    fig, ax = plt.subplots(figsize=(10, 5))
+    bar_width = 0.3
+    index = range(len(df_input["anno"]))
+    ax.bar([i - bar_width for i in index], df_input["ricavi"], width=bar_width, label='Ricavi', color='blue')
+    ax.bar(index, df_input["costi"], width=bar_width, label='Costi', color='red')
+    ax.bar([i + bar_width for i in index], df_input["utile_netto"], width=bar_width, label='Utile Netto', color='green')
+    ax.set_xticks(index)
+    ax.set_xticklabels(df_input["anno"])
+    ax.legend()
+    st.pyplot(fig)
 
-        fig_line, ax_line = plt.subplots(figsize=(10, 4))
-        ax_line.plot(df_input["anno"], df_input["utile_netto"], marker="o", linestyle='-', color="green")
-        ax_line.set_title("Andamento Utile Netto")
-        ax_line.grid(True)
-        st.pyplot(fig_line)
+    fig_line, ax_line = plt.subplots(figsize=(10, 4))
+    ax_line.plot(df_input["anno"], df_input["utile_netto"], marker="o", linestyle='-', color="green")
+    ax_line.set_title("Andamento Utile Netto")
+    ax_line.grid(True)
+    st.pyplot(fig_line)
 
 with tab3:
     pdf_buffer = BytesIO()
@@ -125,4 +140,3 @@ with tab3:
 
     pdf_data = pdf_buffer.getvalue()
     st.download_button("📥 Scarica PDF Grafici", pdf_data, "grafici.pdf", "application/pdf")
-
