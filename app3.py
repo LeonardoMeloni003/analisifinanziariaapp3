@@ -54,12 +54,11 @@ st.markdown("### **Serramenti Renato Orrù**")
 
 # --- CARICAMENTO DATI DA SUPABASE ---
 def load_data():
-    response = requests.get(
-        f'{SUPABASE_URL}/rest/v1/"dati finanziari"?select=*', headers=headers)
+    response = requests.get(f'{SUPABASE_URL}/rest/v1/dati_finanziari?select=*', headers=headers)
     if response.status_code == 200:
         return pd.DataFrame(response.json()).sort_values("anno") if response.json() else pd.DataFrame()
     else:
-        st.error("❌ Errore nel recupero dei dati da Supabase")
+        st.error(f"❌ Errore nel recupero dati: {response.text}")
         return pd.DataFrame()
 
 # --- TABS ---
@@ -108,9 +107,9 @@ with tab1:
     })
 
     if st.button("Salva Dati"):
-        requests.delete(f'{SUPABASE_URL}/rest/v1/"dati finanziari"?anno=gt.0', headers=headers)
+        requests.delete(f'{SUPABASE_URL}/rest/v1/dati_finanziari?anno=gt.0', headers=headers)
         for _, dati in df_input.iterrows():
-            requests.post(f'{SUPABASE_URL}/rest/v1/"dati finanziari"', headers=headers, json=dati.to_dict())
+            requests.post(f'{SUPABASE_URL}/rest/v1/dati_finanziari', headers=headers, json=dati.to_dict())
 
         st.session_state["dati_azienda"] = load_data()
         st.success("✅ Dati salvati correttamente!")
