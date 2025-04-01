@@ -1,0 +1,33 @@
+telem    INFO      2023/03/31 10:16:50:720 LOGGER INIT WITH LEVEL INFO
+telem    INFO      2023/03/31 10:16:50:728 *** Avvio Comunicazione Locazioni Brevi 2022 - C:\Users\Leonardo\Documents\ versione/data 01000031032022 ***
+telem    INFO      2023/03/31 10:16:50:728 Controllo file dati persistenti... 
+telem    INFO      2023/03/31 10:16:50:728 	Non trovato: imposta dati di default.
+
+telem    INFO      2023/03/31 10:16:50:728 Operative System: Windows 11
+telem    INFO      2023/03/31 10:16:50:728 User Home: C:\Users\Leonardo
+telem    INFO      2023/03/31 10:16:50:728 Java Temp: C:\Users\Leonardo\AppData\Local\Temp\
+telem    INFO      2023/03/31 10:16:50:736 Controllo file preferenze utente... 
+telem    INFO      2023/03/31 10:16:50:741 Path assoluta =C:\Users\Leonardo\Documents\
+telem    INFO      2023/03/31 10:16:50:741 	Non trovato: imposta opzioni di default.
+telem    INFO      2023/03/31 10:16:50:833 titolo
+telem    INFO      2023/03/31 10:16:50:833 0
+telem    INFO      2023/03/31 10:16:50:897 Descrizioni CLB22 create ed aggiunte alla mappa...Descrizioni
+telem    INFO      2023/03/31 10:16:50:905 Controlli CLB22 creati ed aggiunti alla mappa...Record Variabile
+telem    INFO      2023/03/31 10:16:50:905 Controlli CLB22 creati ed aggiunti alla mappa...RecordA
+telem    INFO      2023/03/31 10:16:50:905 Controlli CLB22 creati ed aggiunti alla mappa...RecordZ
+telem    INFO      2023/03/31 10:16:50:905 Controlli CLB22 creati ed aggiunti alla mappa...RecordB
+telem    INFO      2023/03/31 10:16:50:913 Dimensioni CLB22 create ed aggiunte alla mappa...RecordB
+telem    INFO      2023/03/31 10:16:50:929 bkgd: javax.swing.plaf.ColorUIResource[r=240,g=240,b=240]
+telem    INFO      2023/03/31 10:16:50:929 opaque: false
+telem    INFO      2023/03/31 10:17:38:650 Operazione: NuovaDich
+telem    INFO      2023/03/31 10:17:38:682 Nome risorsa: CLB22/localAppRoot/wiz/flowWiz.xml
+telem    INFO      2023/03/31 10:17:38:682 Nome risorsa: CLB22/localAppRoot/wiz/Benvenuto.txt
+telem    INFO      2023/03/31 10:17:38:698 Nome risorsa: CLB22/localAppRoot/wiz/Codice_Fiscale.txt
+telem    INFO      2023/03/31 10:17:38:698 Nome risorsa: CLB22/localAppRoot/wiz/Dati_Anagrafici.txt
+telem    INFO      2023/03/31 10:17:38:714 Nome risorsa: CLB22/localAppRoot/wiz/Anno_Riferimento.txt
+telem    INFO      2023/03/31 10:17:38:714 Nome risorsa: CLB22/localAppRoot/wiz/Tipologia_Comunicazione.txt
+telem    INFO      2023/03/31 10:17:38:729 Nome risorsa: CLB22/localAppRoot/wiz/Fine.txt
+telem    INFO      2023/03/31 10:17:45:250 Cursor= 1  Steps= 1
+telem    INFO      2023/03/31 10:18:17:943 Cursor= 2  Steps= 2
+telem    INFO      2023/03/31 10:18:27:362 Cursor= 3  Steps= 3
+telem    INFO      2023/03/31 10:18:49:191 Cursor= 4  Steps= 4
