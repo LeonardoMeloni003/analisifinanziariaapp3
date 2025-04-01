@@ -39,11 +39,21 @@ if tema == "🌙 Scuro":
     st.markdown("""
         <style>
         .stApp {
-            background: linear-gradient(to bottom right, #1c1c1c, #2c2c2c);
+            background: #1e1e1e;
             color: white;
+        }
+        .stMarkdown, .stText, .stDataFrame, .stMetric, .stTable, .css-1d391kg {
+            color: white !important;
+        }
+        .css-1v0mbdj p {
+            color: white !important;
+        }
+        .stMetric label {
+            color: #cccccc !important;
         }
         </style>
     """, unsafe_allow_html=True)
+    plt.style.use('dark_background')
 else:
     st.markdown("""
         <style>
@@ -53,6 +63,7 @@ else:
         }
         </style>
     """, unsafe_allow_html=True)
+    plt.style.use('default')
 
 logo = Image.open("logo.jpg")
 st.image(logo, width=120)
