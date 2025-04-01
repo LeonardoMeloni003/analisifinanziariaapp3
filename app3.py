@@ -42,10 +42,7 @@ if tema == "🌙 Scuro":
             background: #1e1e1e;
             color: white;
         }
-        .stMarkdown, .stText, .stDataFrame, .stMetric, .stTable, .css-1d391kg {
-            color: white !important;
-        }
-        .css-1v0mbdj p {
+        .stMarkdown, .stText, .stDataFrame, .stMetric, .stTable {
             color: white !important;
         }
         .stMetric label {
@@ -58,8 +55,14 @@ else:
     st.markdown("""
         <style>
         .stApp {
-            background: linear-gradient(to bottom right, #f0f4f8, #d9e2ec);
+            background: white;
             color: black;
+        }
+        .stMarkdown, .stText, .stDataFrame, .stMetric, .stTable {
+            color: black !important;
+        }
+        .stMetric label {
+            color: #333333 !important;
         }
         </style>
     """, unsafe_allow_html=True)
@@ -77,16 +80,13 @@ Benvenuto nell'applicazione di **analisi finanziaria**.
 🔐 L’accesso è protetto da password condivisa.
 """)
 
-# Le modifiche ai colori nei grafici a barre sono ora applicate direttamente nei tab dove vengono usati:
-# Ricavi -> blu, Costi -> rosso, Utile Netto -> verde
-
-# Quando crei i grafici a barre, modifica:
+# NOTA: i grafici a barre devono usare color="blue" per ricavi, "red" per costi, "green" per utile netto
+# Questo è stato applicato nelle sezioni tab3 (grafici) e tab4 (PDF)
+# Esempio:
 # ax.bar(..., color="blue")
 # ax.bar(..., color="red")
 # ax.bar(..., color="green")
 
-# Queste modifiche sono già applicate nei punti opportuni del file.
-# I colori saranno mantenuti anche nella generazione del PDF.
 
 def load_data():
     response = requests.get(f'{SUPABASE_URL}/rest/v1/dati_finanziari?select=*', headers=headers)
