@@ -103,95 +103,9 @@ with tab1:
         for _, dati in df_input.iterrows():
             requests.post(f'{SUPABASE_URL}/rest/v1/dati_finanziari', headers=headers, json=dati.to_dict())
 
-        st.session_state["dati_azienda"] = load_data()
         st.success("✅ Dati salvati correttamente!")
         st.experimental_rerun()
+        st.stop()
 
     st.write("### 📋 Dati Inseriti e Indicatori")
     st.dataframe(df_input)
-
-with tab2:
-    st.header("📊 Dashboard Aziendale")
-    df = st.session_state["dati_azienda"]
-    if not df.empty:
-        col1, col2, col3 = st.columns(3)
-        col1.metric("💰 Ricavi Totali", f"{df['ricavi'].sum():,.0f} €")
-        col2.metric("📉 Costi Totali", f"{df['costi'].sum():,.0f} €")
-        col3.metric("💹 Utile Totale", f"{df['utile_netto'].sum():,.0f} €")
-
-        col4, col5 = st.columns(2)
-        col4.metric("📈 Margine Medio", f"{df['margine'].mean():.2f} %")
-        col5.metric("📊 Crescita Utile Media", f"{df['crescita'].mean():.2f} %")
-
-        st.markdown("---")
-
-        fig_dash, ax_dash = plt.subplots(figsize=(10, 4))
-        ax_dash.bar(df['anno'], df['ricavi'], color='blue', label='Ricavi')
-        ax_dash.bar(df['anno'], df['costi'], color='red', label='Costi', bottom=df['ricavi'] - df['costi'])
-        ax_dash.bar(df['anno'], df['utile_netto'], color='green', label='Utile Netto')
-        ax_dash.set_title("Andamento Ricavi, Costi e Utile Netto")
-        ax_dash.set_xlabel("Anno")
-        ax_dash.set_ylabel("Valore (€)")
-        ax_dash.legend()
-        ax_dash.grid(True)
-        st.pyplot(fig_dash)
-        st.session_state["fig_dashboard"] = fig_dash
-
-with tab3:
-    df = st.session_state["dati_azienda"]
-    if not df.empty:
-        st.write("### 📊 Grafico a barre: Ricavi, Costi e Utile Netto")
-        fig_bar, ax = plt.subplots(figsize=(10, 5))
-        bar_width = 0.3
-        index = range(len(df['anno']))
-        ax.bar([i - bar_width for i in index], df['ricavi'], width=bar_width, color='blue', label='Ricavi')
-        ax.bar(index, df['costi'], width=bar_width, color='red', label='Costi')
-        ax.bar([i + bar_width for i in index], df['utile_netto'], width=bar_width, color='green', label='Utile Netto')
-        ax.set_xticks(index)
-        ax.set_xticklabels(df['anno'])
-        ax.set_xlabel("Anno")
-        ax.set_ylabel("Valore (€)")
-        ax.legend()
-        st.pyplot(fig_bar)
-
-        st.write("### 📈 Grafico a linee: Utile Netto")
-        fig_line, ax_line = plt.subplots(figsize=(10, 4))
-        ax_line.plot(df['anno'], df['utile_netto'], marker="o", linestyle='-', color="green", linewidth=2)
-        ax_line.set_title("Andamento dell'Utile Netto")
-        ax_line.set_xlabel("Anno")
-        ax_line.set_ylabel("Utile Netto (€)")
-        ax_line.grid(True)
-        st.pyplot(fig_line)
-
-        st.session_state["fig_bar"] = fig_bar
-        st.session_state["fig_line"] = fig_line
-
-with tab4:
-    df = st.session_state["dati_azienda"]
-    st.write("### 📄 Scarica i report in PDF")
-
-    # PDF TABELLA DATI
-    dati_buffer = BytesIO()
-    with PdfPages(dati_buffer) as pdf:
-        fig_table, ax_table = plt.subplots(figsize=(12, 3))
-        ax_table.axis('off')
-        table = ax_table.table(
-            cellText=df.values,
-            colLabels=df.columns,
-            cellLoc='center',
-            loc='center')
-        table.auto_set_font_size(False)
-        table.set_fontsize(8)
-        table.scale(1, 1.5)
-        pdf.savefig(fig_table, bbox_inches='tight')
-    dati_pdf = dati_buffer.getvalue()
-    st.download_button("📥 Scarica PDF Dati", dati_pdf, file_name="dati_finanziari.pdf", mime="application/pdf")
-
-    # PDF GRAFICI
-    grafici_buffer = BytesIO()
-    with PdfPages(grafici_buffer) as pdf:
-        pdf.savefig(st.session_state["fig_bar"], bbox_inches='tight')
-        pdf.savefig(st.session_state["fig_line"], bbox_inches='tight')
-        pdf.savefig(st.session_state["fig_dashboard"], bbox_inches='tight')
-    grafici_pdf = grafici_buffer.getvalue()
-    st.download_button("📥 Scarica PDF Grafici", grafici_pdf, file_name="grafici_finanziari.pdf", mime="application/pdf")
