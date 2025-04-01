@@ -109,3 +109,85 @@ with tab1:
 
     st.write("### 📋 Dati Inseriti e Indicatori")
     st.dataframe(df_input)
+
+with tab2:
+    st.write("### 📊 KPI Dashboard")
+    if not df_input.empty:
+        st.metric("📈 Media Utile Netto", f"€ {df_input['utile_netto'].mean():,.2f}")
+        st.metric("📉 Margine medio %", f"{df_input['margine'].mean():.2f} %")
+        st.metric("📊 Crescita media utile %", f"{df_input['crescita'].mean():.2f} %")
+
+        fig, ax = plt.subplots()
+        ax.plot(df_input["anno"], df_input["utile_netto"], marker="o")
+        ax.set_title("Andamento Utile Netto")
+        st.pyplot(fig)
+
+with tab3:
+    if not df_input.empty:
+        st.write("### 📊 Grafico a barre")
+        fig_bar, ax = plt.subplots(figsize=(10, 5))
+        index = range(len(df_input))
+        bar_width = 0.3
+        ax.bar([i - bar_width for i in index], df_input["ricavi"], width=bar_width, label="Ricavi")
+        ax.bar(index, df_input["costi"], width=bar_width, label="Costi")
+        ax.bar([i + bar_width for i in index], df_input["utile_netto"], width=bar_width, label="Utile Netto")
+        ax.set_xticks(index)
+        ax.set_xticklabels(df_input["anno"].astype(str).tolist())
+        ax.set_xlabel("Anno")
+        ax.set_ylabel("Valore (€)")
+        ax.legend()
+        st.pyplot(fig_bar)
+
+        st.write("### 📈 Grafico a linee dell'Utile Netto")
+        fig_line, ax_line = plt.subplots(figsize=(10, 4))
+        ax_line.plot(df_input["anno"], df_input["utile_netto"], marker="o", color="green")
+        ax_line.set_xlabel("Anno")
+        ax_line.set_ylabel("Utile Netto (€)")
+        ax_line.set_title("Andamento Utile Netto")
+        st.pyplot(fig_line)
+
+with tab4:
+    if not df_input.empty:
+        st.write("### 📄 Download PDF dei dati")
+        buffer = BytesIO()
+        with PdfPages(buffer) as pdf:
+            fig_table, ax_table = plt.subplots(figsize=(12, 3))
+            ax_table.axis('off')
+            table = ax_table.table(
+                cellText=df_input.values,
+                colLabels=df_input.columns,
+                cellLoc='center',
+                loc='center'
+            )
+            table.auto_set_font_size(False)
+            table.set_fontsize(8)
+            table.scale(1, 1.5)
+            pdf.savefig(fig_table, bbox_inches='tight')
+
+            fig_bar, ax = plt.subplots()
+            index = range(len(df_input))
+            bar_width = 0.3
+            ax.bar([i - bar_width for i in index], df_input["ricavi"], width=bar_width, label="Ricavi")
+            ax.bar(index, df_input["costi"], width=bar_width, label="Costi")
+            ax.bar([i + bar_width for i in index], df_input["utile_netto"], width=bar_width, label="Utile Netto")
+            ax.set_xticks(index)
+            ax.set_xticklabels(df_input["anno"].astype(str).tolist())
+            ax.set_xlabel("Anno")
+            ax.set_ylabel("Valore (€)")
+            ax.legend()
+            pdf.savefig(fig_bar)
+
+            fig_line, ax_line = plt.subplots()
+            ax_line.plot(df_input["anno"], df_input["utile_netto"], marker="o", color="green")
+            ax_line.set_title("Andamento Utile Netto")
+            ax_line.set_xlabel("Anno")
+            ax_line.set_ylabel("Utile Netto (€)")
+            pdf.savefig(fig_line)
+
+        buffer.seek(0)
+        st.download_button(
+            label="📥 Scarica PDF completo",
+            data=buffer,
+            file_name="report_analisi_finanziaria.pdf",
+            mime="application/pdf"
+        )
