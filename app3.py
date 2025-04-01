@@ -17,7 +17,6 @@ headers = {
 
 PASSWORD = "analisi2024"
 
-# --- LOGIN ---
 def check_password():
     def password_entered():
         if st.session_state["password"] == PASSWORD:
@@ -34,25 +33,27 @@ def check_password():
 
 check_password()
 
-# --- SFONDO BUSINESS ---
-st.markdown(
-    """
-    <style>
-    .stApp {
-        background: linear-gradient(to bottom right, #1e3c72, #2a5298);
-        background-attachment: fixed;
-    }
-    </style>
-    """,
-    unsafe_allow_html=True
-)
+st.markdown("""
+<style>
+.stApp {
+    background: linear-gradient(to bottom right, #1e3c72, #2a5298);
+    background-attachment: fixed;
+}
+</style>
+""", unsafe_allow_html=True)
 
-# --- LOGO AZIENDALE ---
 logo = Image.open("logo.jpg")
 st.image(logo, width=120)
 st.markdown("### **Serramenti Renato Orrù**")
 
-# --- CARICAMENTO DATI DA SUPABASE ---
+st.title("📊 Analisi Finanziaria - Serramenti Renato Orrù")
+st.markdown("""
+Benvenuto nell'applicazione di **analisi finanziaria**.
+
+🔹 **Azienda analizzata:** Serramenti Renato Orrù  
+🔐 L’accesso è protetto da password condivisa.
+""")
+
 def load_data():
     response = requests.get(f'{SUPABASE_URL}/rest/v1/dati_finanziari?select=*', headers=headers)
     if response.status_code == 200:
@@ -61,8 +62,8 @@ def load_data():
         st.error(f"❌ Errore nel recupero dati: {response.text}")
         return pd.DataFrame()
 
-# --- TABS ---
-tab1, tab2, tab3 = st.tabs(["📥 Inserimento Dati", "📈 Grafici", "📄 Download PDF"])
+# --- TABS PRINCIPALI ---
+tab1, tab2, tab3, tab4 = st.tabs(["📥 Inserimento Dati", "📊 Dashboard", "📈 Grafici", "📄 Download PDF"])
 
 with tab1:
     st.sidebar.header("Inserisci i dati")
@@ -74,24 +75,15 @@ with tab1:
 
     num_anni = st.sidebar.number_input("Numero di anni", min_value=1, max_value=10, value=int(len(df_input)) if not df_input.empty else 4)
 
-    anni = [
-        st.sidebar.number_input(f"Anno {i + 1}", min_value=2000, max_value=2100,
-        value=int(df_input.iloc[i]["anno"]) if i < len(df_input) else 2020 + i,
-        key=f"anno_{i}")
-        for i in range(num_anni)
-    ]
-    ricavi = [
-        st.sidebar.number_input(f"Ricavi Anno {anni[i]}", min_value=0.0, step=1000.0,
-        value=float(df_input.iloc[i]["ricavi"]) if i < len(df_input) else 1000000.0,
-        key=f"ricavi_{i}")
-        for i in range(num_anni)
-    ]
-    costi = [
-        st.sidebar.number_input(f"Costi Anno {anni[i]}", min_value=0.0, step=1000.0,
-        value=float(df_input.iloc[i]["costi"]) if i < len(df_input) else 1000000.0,
-        key=f"costi_{i}")
-        for i in range(num_anni)
-    ]
+    anni = [st.sidebar.number_input(f"Anno {i + 1}", min_value=2000, max_value=2100,
+                                     value=int(df_input.iloc[i]["anno"]) if i < len(df_input) else 2020 + i,
+                                     key=f"anno_{i}") for i in range(num_anni)]
+    ricavi = [st.sidebar.number_input(f"Ricavi Anno {anni[i]}", min_value=0.0, step=1000.0,
+                                       value=float(df_input.iloc[i]["ricavi"]) if i < len(df_input) else 1000000.0,
+                                       key=f"ricavi_{i}") for i in range(num_anni)]
+    costi = [st.sidebar.number_input(f"Costi Anno {anni[i]}", min_value=0.0, step=1000.0,
+                                      value=float(df_input.iloc[i]["costi"]) if i < len(df_input) else 1000000.0,
+                                      key=f"costi_{i}") for i in range(num_anni)]
 
     utile_netto = [r - c for r, c in zip(ricavi, costi)]
     margine_profitto = [(u / r * 100) if r != 0 else 0 for u, r in zip(utile_netto, ricavi)]
@@ -116,3 +108,42 @@ with tab1:
 
     st.write("### 📋 Dati Inseriti e Indicatori")
     st.dataframe(df_input)
+
+with tab2:
+    st.header("📊 Dashboard Aziendale")
+    df = st.session_state["dati_azienda"]
+    if not df.empty:
+        col1, col2, col3 = st.columns(3)
+        col1.metric("💰 Ricavi Totali", f"{df['ricavi'].sum():,.0f} €")
+        col2.metric("📉 Costi Totali", f"{df['costi'].sum():,.0f} €")
+        col3.metric("💹 Utile Totale", f"{df['utile_netto'].sum():,.0f} €")
+
+        col4, col5 = st.columns(2)
+        col4.metric("📈 Margine Medio", f"{df['margine'].mean():.2f} %")
+        col5.metric("📊 Crescita Utile Media", f"{df['crescita'].mean():.2f} %")
+
+        st.markdown("---")
+
+        fig_dash, ax_dash = plt.subplots(figsize=(10, 4))
+        ax_dash.plot(df['anno'], df['utile_netto'], marker='o', linestyle='-', color='green', label="Utile Netto")
+        ax_dash.plot(df['anno'], df['ricavi'], marker='s', linestyle='--', color='blue', label="Ricavi")
+        ax_dash.plot(df['anno'], df['costi'], marker='^', linestyle='--', color='red', label="Costi")
+        ax_dash.set_title("Andamento Ricavi, Costi e Utile Netto")
+        ax_dash.set_xlabel("Anno")
+        ax_dash.set_ylabel("Valore (€)")
+        ax_dash.legend()
+        ax_dash.grid(True)
+        st.pyplot(fig_dash)
+
+        # --- Download PDF della dashboard ---
+        buffer = BytesIO()
+        with PdfPages(buffer) as pdf:
+            pdf.savefig(fig_dash, bbox_inches='tight')
+        pdf_bytes = buffer.getvalue()
+
+        st.download_button(
+            label="📥 Scarica PDF della Dashboard",
+            data=pdf_bytes,
+            file_name="dashboard_finanziaria.pdf",
+            mime="application/pdf"
+        )
