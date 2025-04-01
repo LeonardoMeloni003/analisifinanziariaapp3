@@ -105,6 +105,7 @@ with tab1:
 
         st.session_state["dati_azienda"] = load_data()
         st.success("✅ Dati salvati correttamente!")
+        st.experimental_rerun()
 
     st.write("### 📋 Dati Inseriti e Indicatori")
     st.dataframe(df_input)
@@ -124,21 +125,32 @@ with tab2:
 
         st.markdown("---")
 
-        fig_dash, ax_dash = plt.subplots(figsize=(10, 4))
-        ax_dash.plot(df['anno'], df['utile_netto'], marker='o', linestyle='-', color='green', label="Utile Netto")
-        ax_dash.plot(df['anno'], df['ricavi'], marker='s', linestyle='--', color='blue', label="Ricavi")
-        ax_dash.plot(df['anno'], df['costi'], marker='^', linestyle='--', color='red', label="Costi")
-        ax_dash.set_title("Andamento Ricavi, Costi e Utile Netto")
-        ax_dash.set_xlabel("Anno")
-        ax_dash.set_ylabel("Valore (€)")
-        ax_dash.legend()
-        ax_dash.grid(True)
-        st.pyplot(fig_dash)
+        fig_bar, ax_bar = plt.subplots(figsize=(10, 4))
+        ax_bar.bar(df['anno'], df['ricavi'], color='blue', label='Ricavi')
+        ax_bar.bar(df['anno'], df['costi'], color='red', label='Costi', bottom=df['ricavi'] - df['costi'])
+        ax_bar.bar(df['anno'], df['utile_netto'], color='green', label='Utile Netto')
+        ax_bar.set_title("Andamento Ricavi, Costi e Utile Netto")
+        ax_bar.set_xlabel("Anno")
+        ax_bar.set_ylabel("Valore (€)")
+        ax_bar.legend()
+        ax_bar.grid(True)
+        st.pyplot(fig_bar)
 
-        # --- Download PDF della dashboard ---
+        fig_line, ax_line = plt.subplots(figsize=(10, 4))
+        ax_line.plot(df['anno'], df['utile_netto'], marker='o', linestyle='-', color='green')
+        ax_line.set_title("Andamento Utile Netto")
+        ax_line.set_xlabel("Anno")
+        ax_line.set_ylabel("Utile Netto (€)")
+        ax_line.grid(True)
+        st.pyplot(fig_line)
+
+        st.session_state["fig_bar"] = fig_bar
+        st.session_state["fig_line"] = fig_line
+
         buffer = BytesIO()
         with PdfPages(buffer) as pdf:
-            pdf.savefig(fig_dash, bbox_inches='tight')
+            pdf.savefig(fig_bar, bbox_inches='tight')
+            pdf.savefig(fig_line, bbox_inches='tight')
         pdf_bytes = buffer.getvalue()
 
         st.download_button(
