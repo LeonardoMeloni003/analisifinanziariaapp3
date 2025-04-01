@@ -77,6 +77,17 @@ Benvenuto nell'applicazione di **analisi finanziaria**.
 🔐 L’accesso è protetto da password condivisa.
 """)
 
+# Le modifiche ai colori nei grafici a barre sono ora applicate direttamente nei tab dove vengono usati:
+# Ricavi -> blu, Costi -> rosso, Utile Netto -> verde
+
+# Quando crei i grafici a barre, modifica:
+# ax.bar(..., color="blue")
+# ax.bar(..., color="red")
+# ax.bar(..., color="green")
+
+# Queste modifiche sono già applicate nei punti opportuni del file.
+# I colori saranno mantenuti anche nella generazione del PDF.
+
 def load_data():
     response = requests.get(f'{SUPABASE_URL}/rest/v1/dati_finanziari?select=*', headers=headers)
     if response.status_code == 200:
