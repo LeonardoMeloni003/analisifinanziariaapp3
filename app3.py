@@ -48,6 +48,10 @@ if tema == "🌙 Scuro":
         .stMetric label {
             color: #cccccc !important;
         }
+        html, body, [class*="css"]  {
+            background-color: transparent !important;
+            color: inherit !important;
+        }
         </style>
     """, unsafe_allow_html=True)
     plt.style.use('dark_background')
@@ -64,6 +68,10 @@ else:
         .stMetric label {
             color: #333333 !important;
         }
+        html, body, [class*="css"]  {
+            background-color: transparent !important;
+            color: inherit !important;
+        }
         </style>
     """, unsafe_allow_html=True)
     plt.style.use('default')
@@ -79,13 +87,6 @@ Benvenuto nell'applicazione di **analisi finanziaria**.
 🔹 **Azienda analizzata:** Serramenti Renato Orrù  
 🔐 L’accesso è protetto da password condivisa.
 """)
-
-# NOTA: i grafici a barre devono usare color="blue" per ricavi, "red" per costi, "green" per utile netto
-# Questo è stato applicato nelle sezioni tab3 (grafici) e tab4 (PDF)
-# Esempio:
-# ax.bar(..., color="blue")
-# ax.bar(..., color="red")
-# ax.bar(..., color="green")
 
 
 def load_data():
