@@ -33,14 +33,26 @@ def check_password():
 
 check_password()
 
-st.markdown("""
-<style>
-.stApp {
-    background: linear-gradient(to bottom right, #1e3c72, #2a5298);
-    background-attachment: fixed;
-}
-</style>
-""", unsafe_allow_html=True)
+# Tema: chiaro o scuro
+tema = st.sidebar.radio("Tema", ["🌞 Chiaro", "🌙 Scuro"])
+if tema == "🌙 Scuro":
+    st.markdown("""
+        <style>
+        .stApp {
+            background: linear-gradient(to bottom right, #1c1c1c, #2c2c2c);
+            color: white;
+        }
+        </style>
+    """, unsafe_allow_html=True)
+else:
+    st.markdown("""
+        <style>
+        .stApp {
+            background: linear-gradient(to bottom right, #f0f4f8, #d9e2ec);
+            color: black;
+        }
+        </style>
+    """, unsafe_allow_html=True)
 
 logo = Image.open("logo.jpg")
 st.image(logo, width=120)
@@ -132,6 +144,23 @@ with tab2:
         ax.plot(df_input["data"], df_input["utile_netto"], marker="o")
         ax.set_title("Andamento Utile Netto")
         st.pyplot(fig)
+
+        st.write("### 🤖 Commento Automatico")
+        ultimo_periodo = df_input.iloc[-1]
+        commento = ""
+        if ultimo_periodo["crescita"] > 0:
+            commento += f"📈 L'utile netto è cresciuto del **{ultimo_periodo['crescita']:.2f}%** nell'ultimo periodo. "
+        else:
+            commento += f"📉 L'utile netto è diminuito del **{abs(ultimo_periodo['crescita']):.2f}%** nell'ultimo periodo. "
+
+        if ultimo_periodo["margine"] >= 20:
+            commento += "🔵 Il margine è **molto buono** (≥ 20%)."
+        elif ultimo_periodo["margine"] >= 10:
+            commento += "🟡 Il margine è **accettabile** (tra 10% e 20%)."
+        else:
+            commento += "🔴 Il margine è **basso** (< 10%)."
+
+        st.success(commento)
 
 with tab3:
     if not df_input.empty:
