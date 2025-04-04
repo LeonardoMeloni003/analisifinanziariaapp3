@@ -1,20 +1,11 @@
+
 import streamlit as st
 import pandas as pd
 import matplotlib.pyplot as plt
 from io import BytesIO
 from matplotlib.backends.backend_pdf import PdfPages
-from PIL import Image
-import requests
 
-# --- CONFIGURAZIONE SUPABASE ---
-SUPABASE_URL = "https://fpblplgqvekuekorumkr.supabase.co"
-SUPABASE_KEY = "LA_TUA_CHIAVE_SUPABASE"
-headers = {
-    "apikey": SUPABASE_KEY,
-    "Authorization": f"Bearer {SUPABASE_KEY}",
-    "Content-Type": "application/json"
-}
-
+# Protezione con password
 PASSWORD = "analisi2024"
 
 def check_password():
@@ -36,27 +27,17 @@ check_password()
 st.set_page_config(page_title="Analisi Finanziaria", layout="wide")
 st.title("📊 Analisi Finanziaria - Serramenti Renato Orrù")
 
-def load_data():
-    response = requests.get(f'{SUPABASE_URL}/rest/v1/dati_finanziari?select=*', headers=headers)
-    if response.status_code == 200:
-        return pd.DataFrame(response.json()).sort_values("anno") if response.json() else pd.DataFrame()
-    else:
-        st.error("❌ Errore nel recupero dati")
-        return pd.DataFrame()
+# Caricamento dati fittizi o salvati in sessione
+if "dati_azienda" not in st.session_state:
+    st.session_state["dati_azienda"] = pd.DataFrame()
+
+df = st.session_state["dati_azienda"]
 
 tab1, tab2, tab3, tab4 = st.tabs(["📥 Inserimento", "📊 Dashboard", "📈 Grafici", "📄 PDF"])
 
-if 'dati_azienda' not in st.session_state:
-    st.session_state['dati_azienda'] = load_data()
-
-df = st.session_state["dati_azienda"]
 with tab1:
-    if not df.empty:
-        st.write("### 📋 Dati attuali")
-        st.dataframe(df)
-
-    st.write("### ✏️ Modifica o Inserisci Dati")
-    anni = st.multiselect("Anni", list(range(2015, 2031)), default=df['anno'].tolist() if not df.empty else [])
+    st.write("### ✏️ Inserisci o modifica i dati")
+    anni = st.multiselect("Anni", list(range(2015, 2031)))
     new_data = []
     for anno in anni:
         col1, col2 = st.columns(2)
@@ -68,12 +49,13 @@ with tab1:
         margine = (utile / ricavi * 100) if ricavi else 0
         new_data.append({"anno": anno, "ricavi": ricavi, "costi": costi, "utile_netto": utile, "margine": margine})
 
-    if st.button("💾 Salva su Supabase"):
-        requests.delete(f'{SUPABASE_URL}/rest/v1/dati_finanziari?anno=gt.0', headers=headers)
-        for row in new_data:
-            requests.post(f'{SUPABASE_URL}/rest/v1/dati_finanziari', headers=headers, json=row)
-        st.success("✅ Dati salvati!")
-        st.experimental_rerun()
+    if st.button("💾 Salva localmente"):
+        st.session_state["dati_azienda"] = pd.DataFrame(new_data)
+        st.success("✅ Dati salvati nella sessione.")
+
+    if not df.empty:
+        st.write("### 📋 Dati salvati")
+        st.dataframe(df)
 
 with tab2:
     if not df.empty:
