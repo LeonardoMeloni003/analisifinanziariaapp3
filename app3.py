@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 from io import BytesIO
 from matplotlib.backends.backend_pdf import PdfPages
 
-# Protezione con password
+# Protezione
 PASSWORD = "analisi2024"
 
 def check_password():
@@ -14,7 +14,6 @@ def check_password():
             st.session_state["password_correct"] = True
         else:
             st.session_state["password_correct"] = False
-
     if "password_correct" not in st.session_state:
         st.text_input("🔒 Inserisci la password per accedere:", type="password", on_change=password_entered, key="password")
         st.stop()
@@ -23,13 +22,20 @@ def check_password():
         st.stop()
 
 check_password()
-
 st.set_page_config(page_title="Analisi Finanziaria", layout="wide")
 st.title("📊 Analisi Finanziaria - Serramenti Renato Orrù")
 
-# Caricamento dati fittizi o salvati in sessione
+# Caricamento o dati demo
 if "dati_azienda" not in st.session_state:
-    st.session_state["dati_azienda"] = pd.DataFrame()
+    dati_demo = pd.DataFrame({
+        "anno": [2020, 2021, 2022],
+        "ricavi": [100000, 120000, 140000],
+        "costi": [80000, 90000, 95000],
+    })
+    dati_demo["utile_netto"] = dati_demo["ricavi"] - dati_demo["costi"]
+    dati_demo["margine"] = (dati_demo["utile_netto"] / dati_demo["ricavi"]) * 100
+    dati_demo["crescita"] = [0] + [((dati_demo["utile_netto"].iloc[i] - dati_demo["utile_netto"].iloc[i-1]) / dati_demo["utile_netto"].iloc[i-1]) * 100 for i in range(1, len(dati_demo))]
+    st.session_state["dati_azienda"] = dati_demo
 
 df = st.session_state["dati_azienda"]
 
@@ -50,60 +56,60 @@ with tab1:
         new_data.append({"anno": anno, "ricavi": ricavi, "costi": costi, "utile_netto": utile, "margine": margine})
 
     if st.button("💾 Salva localmente"):
-        st.session_state["dati_azienda"] = pd.DataFrame(new_data)
-        st.success("✅ Dati salvati nella sessione.")
+        new_df = pd.DataFrame(new_data)
+        if not new_df.empty:
+            new_df["crescita"] = [0] + [((new_df["utile_netto"].iloc[i] - new_df["utile_netto"].iloc[i-1]) / new_df["utile_netto"].iloc[i-1]) * 100 for i in range(1, len(new_df))]
+            st.session_state["dati_azienda"] = new_df
+            st.success("✅ Dati salvati.")
+            st.experimental_rerun()
 
-    if not df.empty:
-        st.write("### 📋 Dati salvati")
-        st.dataframe(df)
+    st.write("### 📋 Dati correnti")
+    st.dataframe(df)
 
 with tab2:
     if not df.empty:
-        df["crescita"] = [0] + [((df["utile_netto"].iloc[i] - df["utile_netto"].iloc[i-1]) / df["utile_netto"].iloc[i-1]) * 100 for i in range(1, len(df))]
-        media_utile = df['utile_netto'].mean()
-        media_margine = df['margine'].mean()
-        media_crescita = df['crescita'].mean()
-
-        st.metric("📈 Media Utile Netto", f"€ {media_utile:,.2f}")
-        st.metric("📉 Margine medio %", f"{media_margine:.2f} %")
-        st.metric("📊 Crescita media utile %", f"{media_crescita:.2f} %")
+        st.write("### 📊 Indicatori")
+        st.metric("📈 Media Utile Netto", f"€ {df['utile_netto'].mean():,.2f}")
+        st.metric("📉 Margine medio %", f"{df['margine'].mean():.2f} %")
+        st.metric("📊 Crescita media utile %", f"{df['crescita'].mean():.2f} %")
 
         st.write("### 💬 Commento automatico")
-        if media_margine > 25:
+        margine_medio = df["margine"].mean()
+        crescita_media = df["crescita"].mean()
+
+        if margine_medio > 25:
             st.success("🟢 Ottima redditività.")
-        elif media_margine > 15:
+        elif margine_medio > 15:
             st.info("🟡 Redditività buona ma migliorabile.")
         else:
             st.warning("🔴 Margine basso.")
 
-        if media_crescita > 10:
+        if crescita_media > 10:
             st.success("📈 Utile in forte crescita.")
-        elif media_crescita > 0:
+        elif crescita_media > 0:
             st.info("📊 Utile stabile o in lieve crescita.")
         else:
             st.warning("📉 Utile in calo.")
 
 with tab3:
-    if not df.empty:
-        st.write("### 📊 Grafico")
-        fig, ax = plt.subplots()
-        index = range(len(df))
-        ax.bar([i - 0.2 for i in index], df["ricavi"], width=0.2, label="Ricavi", color="blue")
-        ax.bar(index, df["costi"], width=0.2, label="Costi", color="red")
-        ax.bar([i + 0.2 for i in index], df["utile_netto"], width=0.2, label="Utile Netto", color="green")
-        ax.set_xticks(index)
-        ax.set_xticklabels(df["anno"].astype(str))
-        ax.legend()
-        st.pyplot(fig)
+    st.write("### 📊 Grafico Ricavi / Costi / Utile Netto")
+    fig, ax = plt.subplots()
+    index = range(len(df))
+    ax.bar([i - 0.2 for i in index], df["ricavi"], width=0.2, label="Ricavi", color="blue")
+    ax.bar(index, df["costi"], width=0.2, label="Costi", color="red")
+    ax.bar([i + 0.2 for i in index], df["utile_netto"], width=0.2, label="Utile Netto", color="green")
+    ax.set_xticks(index)
+    ax.set_xticklabels(df["anno"].astype(str))
+    ax.legend()
+    st.pyplot(fig)
 
 with tab4:
-    if not df.empty:
-        st.write("### 📄 Download PDF")
-        buffer = BytesIO()
-        with PdfPages(buffer) as pdf:
-            fig, ax = plt.subplots()
-            ax.axis("off")
-            ax.table(cellText=df.values, colLabels=df.columns, loc="center", cellLoc="center")
-            pdf.savefig(fig, bbox_inches="tight")
-        buffer.seek(0)
-        st.download_button("📥 Scarica PDF", buffer, "report_finanziario.pdf", "application/pdf")
+    st.write("### 📄 Download PDF")
+    buffer = BytesIO()
+    with PdfPages(buffer) as pdf:
+        fig, ax = plt.subplots()
+        ax.axis("off")
+        ax.table(cellText=df.values, colLabels=df.columns, loc="center", cellLoc="center")
+        pdf.savefig(fig, bbox_inches="tight")
+    buffer.seek(0)
+    st.download_button("📥 Scarica PDF", buffer, "report_finanziario.pdf", "application/pdf")
