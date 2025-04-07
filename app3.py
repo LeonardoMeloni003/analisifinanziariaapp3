@@ -13,15 +13,15 @@ def check_password():
         else:
             st.session_state["password_correct"] = False
     if "password_correct" not in st.session_state:
-        st.text_input("\U0001f512 Inserisci la password per accedere:", type="password", on_change=password_entered, key="password")
+        st.text_input("🔒 Inserisci la password per accedere:", type="password", on_change=password_entered, key="password")
         st.stop()
     elif not st.session_state["password_correct"]:
-        st.text_input("\u274c Password errata. Riprova:", type="password", on_change=password_entered, key="password")
+        st.text_input("❌ Password errata. Riprova:", type="password", on_change=password_entered, key="password")
         st.stop()
 
 check_password()
 st.set_page_config(page_title="Analisi Finanziaria", layout="wide")
-st.title("\U0001f4ca Analisi Finanziaria - Serramenti Renato Orrù")
+st.title("📊 Analisi Finanziaria - Serramenti Renato Orrù")
 
 # Selezione tipo di periodo
 periodo = st.sidebar.selectbox("Seleziona il periodo di analisi:", ["Annuale", "Mensile", "Settimanale", "Giornaliero"])
@@ -33,7 +33,7 @@ if "dati_azienda" not in st.session_state:
 df = st.session_state["dati_azienda"]
 
 # Tabs
-inserimento, dashboard, grafici, pdf = st.tabs(["\U0001f4e5 Inserimento", "\U0001f4ca Dashboard", "\U0001f4c8 Grafici", "\U0001f4c4 PDF"])
+inserimento, dashboard, grafici, pdf = st.tabs(["📥 Inserimento", "📊 Dashboard", "📈 Grafici", "📄 PDF"])
 
 with inserimento:
     st.subheader(f"Inserimento dati ({periodo.lower()})")
@@ -50,26 +50,26 @@ with inserimento:
                 costi = st.number_input("Costi", min_value=0.0, key=f"costi_{i}")
                 utile = ricavi - costi
                 margine = (utile / ricavi * 100) if ricavi else 0
-            nuove_righe.append({"periodo": data, "ricavi": ricavi, "costi": costi, "utile_netto": utile, "margine": margine})
+            nuove_righe.append({"data": data, "ricavi": ricavi, "costi": costi, "utile_netto": utile, "margine": margine})
 
-    if st.button("\U0001f4be Salva dati"):
+    if st.button("💾 Salva dati"):
         nuovo_df = pd.DataFrame(nuove_righe)
-        combined = pd.concat([df, nuovo_df], ignore_index=True).drop_duplicates(subset="periodo").sort_values("periodo")
+        combined = pd.concat([df, nuovo_df], ignore_index=True).drop_duplicates(subset="data").sort_values("data")
         combined["crescita"] = [0] + [
             ((combined["utile_netto"].iloc[i] - combined["utile_netto"].iloc[i - 1]) / combined["utile_netto"].iloc[i - 1]) * 100
             if combined["utile_netto"].iloc[i - 1] != 0 else 0
             for i in range(1, len(combined))
         ]
         st.session_state["dati_azienda"] = combined
-        st.success("\u2705 Dati salvati!")
+        st.success("✅ Dati salvati!")
 
     st.dataframe(st.session_state["dati_azienda"])
 
 with dashboard:
     if not df.empty:
-        st.metric("\U0001f4c8 Media Utile Netto", f"\u20ac {df['utile_netto'].mean():,.2f}")
-        st.metric("\U0001f4c9 Margine medio %", f"{df['margine'].mean():.2f} %")
-        st.metric("\U0001f4ca Crescita media utile %", f"{df['crescita'].mean():.2f} %")
+        st.metric("📈 Media Utile Netto", f"€ {df['utile_netto'].mean():,.2f}")
+        st.metric("📉 Margine medio %", f"{df['margine'].mean():.2f} %")
+        st.metric("📊 Crescita media utile %", f"{df['crescita'].mean():.2f} %")
 
 with grafici:
     if not df.empty:
@@ -79,9 +79,18 @@ with grafici:
         ax.bar(index, df["costi"], width=0.2, label="Costi", color="red")
         ax.bar([i + 0.2 for i in index], df["utile_netto"], width=0.2, label="Utile Netto", color="green")
         ax.set_xticks(index)
-        ax.set_xticklabels(df["periodo"].astype(str), rotation=45)
+        ax.set_xticklabels(df["data"].astype(str), rotation=45)
         ax.legend()
         st.pyplot(fig)
+
+        st.write("### 📈 Grafico Utile Netto")
+        fig_line, ax_line = plt.subplots()
+        ax_line.plot(df["data"], df["utile_netto"], marker="o", color="green")
+        ax_line.set_xlabel("Periodo")
+        ax_line.set_ylabel("Utile Netto")
+        ax_line.set_title("Andamento Utile Netto")
+        ax_line.grid(True)
+        st.pyplot(fig_line)
 
 with pdf:
     if not df.empty:
@@ -92,4 +101,4 @@ with pdf:
             ax.table(cellText=df.values, colLabels=df.columns, loc="center", cellLoc="center")
             pdf.savefig(fig, bbox_inches="tight")
         buffer.seek(0)
-        st.download_button("\U0001f4e5 Scarica PDF", buffer, "report_finanziario.pdf", "application/pdf")
+        st.download_button("📥 Scarica PDF", buffer, "report_finanziario.pdf", "application/pdf")
