@@ -61,7 +61,8 @@ with tab1:
             new_df["crescita"] = [0] + [((new_df["utile_netto"].iloc[i] - new_df["utile_netto"].iloc[i-1]) / new_df["utile_netto"].iloc[i-1]) * 100 for i in range(1, len(new_df))]
             st.session_state["dati_azienda"] = new_df
             st.success("✅ Dati salvati.")
-            st.experimental_rerun()
+            st.stop()
+
 
     st.write("### 📋 Dati correnti")
     st.dataframe(df)
