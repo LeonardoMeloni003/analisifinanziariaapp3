@@ -31,12 +31,13 @@ def check_password():
         st.stop()
 
 check_password()
-
 st.set_page_config(page_title="Analisi Finanziaria", layout="wide")
 st.title("📊 Analisi Finanziaria - Periodi Dinamici")
 
-periodo = st.sidebar.selectbox("Periodo di analisi:", ["Annuale", "Mensile", "Settimanale", "Giornaliero"])
+# Selezione tipo di periodo
+tipo_periodo = st.sidebar.selectbox("Periodo di analisi:", ["Annuale", "Mensile", "Settimanale", "Giornaliero"])
 
+# Caricamento dati da Supabase
 def load_data():
     response = requests.get(f'{SUPABASE_URL}/rest/v1/finanza_periodi?select=*', headers=headers)
     if response.status_code == 200:
@@ -48,32 +49,41 @@ def load_data():
 
 df = load_data()
 
+# --- TABS ---
 tab1, tab2, tab3, tab4 = st.tabs(["📥 Inserimento", "📊 Dashboard", "📈 Grafici", "📄 PDF"])
 
 with tab1:
     st.subheader("Inserimento Dati")
     num_righe = st.number_input("Numero di periodi da inserire", min_value=1, max_value=20, value=3)
     nuove_righe = []
+
     for i in range(num_righe):
         st.markdown(f"---
 ### Periodo {i+1}")
         col1, col2 = st.columns(2)
         with col1:
             periodo_val = st.text_input("Periodo (es. 2024, 2024-03, 2024-03-15)", key=f"periodo_{i}")
-            ricavi = st.number_input("Ricavi", min_value=0.0, key=f"ricavi_{i}")
+            ricavi = st.number_input("Ricavi", min_value=0.0, step=1000.0, key=f"ricavi_{i}")
         with col2:
-            costi = st.number_input("Costi", min_value=0.0, key=f"costi_{i}")
+            costi = st.number_input("Costi", min_value=0.0, step=1000.0, key=f"costi_{i}")
             utile = ricavi - costi
             margine = (utile / ricavi * 100) if ricavi else 0
-        nuove_righe.append({"periodo": periodo_val, "ricavi": ricavi, "costi": costi, "utile_netto": utile, "margine": margine})
+        nuove_righe.append({
+            "periodo": periodo_val,
+            "ricavi": ricavi,
+            "costi": costi,
+            "utile_netto": utile,
+            "margine": margine
+        })
 
     if st.button("💾 Salva su Supabase"):
         requests.delete(f'{SUPABASE_URL}/rest/v1/finanza_periodi?periodo=gt.0', headers=headers)
         for riga in nuove_righe:
             requests.post(f'{SUPABASE_URL}/rest/v1/finanza_periodi', headers=headers, json=riga)
-        st.success("Dati salvati con successo")
+        st.success("✅ Dati salvati con successo")
         st.experimental_rerun()
 
+    st.write("### 📋 Dati attualmente salvati")
     st.dataframe(df)
 
 with tab2:
@@ -88,11 +98,14 @@ with tab2:
         st.write("### 💬 Commento automatico")
         if df["margine"].mean() > 20:
             st.success("🟢 Margine buono")
+        elif df["margine"].mean() > 10:
+            st.info("🟡 Margine nella media")
         else:
-            st.warning("🟠 Margine migliorabile")
+            st.warning("🔴 Margine basso")
 
 with tab3:
     if not df.empty:
+        st.write("### 📊 Grafico a Barre")
         fig_bar, ax = plt.subplots()
         index = range(len(df))
         ax.bar([i - 0.2 for i in index], df["ricavi"], width=0.2, label="Ricavi", color="blue")
@@ -109,17 +122,22 @@ with tab3:
         fig_line, ax2 = plt.subplots()
         ax2.plot(df["periodo"], df["utile_netto"], marker="o", color="green")
         ax2.set_xlabel("Periodo")
-        ax2.set_ylabel("Utile Netto")
+        ax2.set_ylabel("Utile Netto (€)")
         ax2.set_title("Andamento Utile Netto")
+        ax2.grid(True)
         st.pyplot(fig_line)
 
 with tab4:
     if not df.empty:
+        st.write("### 📄 Download PDF")
         buffer = BytesIO()
         with PdfPages(buffer) as pdf:
             fig, ax = plt.subplots()
             ax.axis("off")
-            ax.table(cellText=df.values, colLabels=df.columns, loc="center", cellLoc="center")
+            table = ax.table(cellText=df.values, colLabels=df.columns, loc="center", cellLoc="center")
+            table.auto_set_font_size(False)
+            table.set_fontsize(8)
+            table.scale(1, 1.5)
             pdf.savefig(fig, bbox_inches="tight")
         buffer.seek(0)
-        st.download_button("📄 Scarica PDF", buffer, "report_analisi.pdf", "application/pdf")
+        st.download_button("📥 Scarica PDF", buffer, "report_analisi_finanziaria.pdf", "application/pdf")
