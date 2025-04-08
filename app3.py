@@ -121,7 +121,7 @@ with tab3:
 
         st.write("### \U0001f4c8 Andamento Utile Netto")
         fig_line, ax2 = plt.subplots()
-        ax2.plot(df["periodo"], df["utile_netto"], marker="o", color="green")
+        ax2.plot(df["anno"], df["utile_netto"], marker="o", color="green")
         ax2.set_xlabel("Periodo")
         ax2.set_ylabel("Utile Netto (€)")
         ax2.set_title("Andamento Utile Netto")
