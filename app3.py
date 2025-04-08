@@ -81,10 +81,35 @@ with tab1:
                 }
                 requests.post(f'{SUPABASE_URL}/rest/v1/dati_finanziari', headers=headers, json=nuova_riga)
                 st.success("✅ Dati salvati con successo")
-                st.experimental_rerun()
+                st.rerun()
 
     st.write("### \U0001f4cb Dati attualmente salvati")
     st.dataframe(df)
+
+    st.write("### \U0001f527 Modifica Dati Esistenti")
+    for i, row in df.iterrows():
+        with st.expander(f"Anno {row['anno']}"):
+            nuovo_ricavi = st.number_input(f"Ricavi (€) - {row['anno']}", value=float(row['ricavi']), step=1000.0, key=f"mod_ricavi_{i}")
+            nuovo_costi = st.number_input(f"Costi (€) - {row['anno']}", value=float(row['costi']), step=1000.0, key=f"mod_costi_{i}")
+
+            nuovo_utile = nuovo_ricavi - nuovo_costi
+            nuovo_margine = (nuovo_utile / nuovo_ricavi * 100) if nuovo_ricavi else 0
+            st.info(f"Utile: €{nuovo_utile:,.2f} | Margine: {nuovo_margine:.2f}%")
+
+            if st.button(f"💾 Salva Modifiche - {row['anno']}"):
+                updated_row = {
+                    "ricavi": nuovo_ricavi,
+                    "costi": nuovo_costi,
+                    "utile_netto": nuovo_utile,
+                    "margine": nuovo_margine
+                }
+                requests.patch(
+                    f"{SUPABASE_URL}/rest/v1/dati_finanziari?anno=eq.{row['anno']}",
+                    headers=headers,
+                    json=updated_row
+                )
+                st.success(f"Dati aggiornati per l'anno {row['anno']}")
+                st.rerun()
 
 with tab2:
     if not df.empty:
