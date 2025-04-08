@@ -1,4 +1,3 @@
-
 import streamlit as st
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -24,15 +23,15 @@ def check_password():
         else:
             st.session_state["password_correct"] = False
     if "password_correct" not in st.session_state:
-        st.text_input("🔒 Inserisci la password per accedere:", type="password", on_change=password_entered, key="password")
+        st.text_input("\U0001f512 Inserisci la password per accedere:", type="password", on_change=password_entered, key="password")
         st.stop()
     elif not st.session_state["password_correct"]:
-        st.text_input("❌ Password errata. Riprova:", type="password", on_change=password_entered, key="password")
+        st.text_input("\u274c Password errata. Riprova:", type="password", on_change=password_entered, key="password")
         st.stop()
 
 check_password()
 st.set_page_config(page_title="Analisi Finanziaria", layout="wide")
-st.title("📊 Analisi Finanziaria - Periodi Dinamici")
+st.title("\U0001f4ca Analisi Finanziaria - Periodi Dinamici")
 
 # Selezione tipo di periodo
 tipo_periodo = st.sidebar.selectbox("Periodo di analisi:", ["Annuale", "Mensile", "Settimanale", "Giornaliero"])
@@ -50,7 +49,7 @@ def load_data():
 df = load_data()
 
 # --- TABS ---
-tab1, tab2, tab3, tab4 = st.tabs(["📥 Inserimento", "📊 Dashboard", "📈 Grafici", "📄 PDF"])
+tab1, tab2, tab3, tab4 = st.tabs(["\U0001f4e5 Inserimento", "\U0001f4ca Dashboard", "\U0001f4c8 Grafici", "\U0001f4c4 PDF"])
 
 with tab1:
     st.subheader("Inserimento Dati")
@@ -58,8 +57,8 @@ with tab1:
     nuove_righe = []
 
     for i in range(num_righe):
-        st.markdown(f"---
-### Periodo {i+1}")
+        st.markdown("---")
+        st.markdown(f"### Periodo {i+1}")
         col1, col2 = st.columns(2)
         with col1:
             periodo_val = st.text_input("Periodo (es. 2024, 2024-03, 2024-03-15)", key=f"periodo_{i}")
@@ -76,14 +75,14 @@ with tab1:
             "margine": margine
         })
 
-    if st.button("💾 Salva su Supabase"):
+    if st.button("\U0001f4be Salva su Supabase"):
         requests.delete(f'{SUPABASE_URL}/rest/v1/finanza_periodi?periodo=gt.0', headers=headers)
         for riga in nuove_righe:
             requests.post(f'{SUPABASE_URL}/rest/v1/finanza_periodi', headers=headers, json=riga)
-        st.success("✅ Dati salvati con successo")
+        st.success("\u2705 Dati salvati con successo")
         st.experimental_rerun()
 
-    st.write("### 📋 Dati attualmente salvati")
+    st.write("### \U0001f4cb Dati attualmente salvati")
     st.dataframe(df)
 
 with tab2:
@@ -91,21 +90,21 @@ with tab2:
         df["crescita"] = [0] + [((df["utile_netto"].iloc[i] - df["utile_netto"].iloc[i - 1]) / df["utile_netto"].iloc[i - 1]) * 100
                               if df["utile_netto"].iloc[i - 1] != 0 else 0
                               for i in range(1, len(df))]
-        st.metric("📈 Media Utile Netto", f"€ {df['utile_netto'].mean():,.2f}")
-        st.metric("📉 Margine medio %", f"{df['margine'].mean():.2f} %")
-        st.metric("📊 Crescita media utile %", f"{df['crescita'].mean():.2f} %")
+        st.metric("\U0001f4c8 Media Utile Netto", f"\u20ac {df['utile_netto'].mean():,.2f}")
+        st.metric("\U0001f4c9 Margine medio %", f"{df['margine'].mean():.2f} %")
+        st.metric("\U0001f4ca Crescita media utile %", f"{df['crescita'].mean():.2f} %")
 
-        st.write("### 💬 Commento automatico")
+        st.write("### \U0001f4ac Commento automatico")
         if df["margine"].mean() > 20:
-            st.success("🟢 Margine buono")
+            st.success("\U0001f7e2 Margine buono")
         elif df["margine"].mean() > 10:
-            st.info("🟡 Margine nella media")
+            st.info("\U0001f7e1 Margine nella media")
         else:
-            st.warning("🔴 Margine basso")
+            st.warning("\U0001f534 Margine basso")
 
 with tab3:
     if not df.empty:
-        st.write("### 📊 Grafico a Barre")
+        st.write("### \U0001f4ca Grafico a Barre")
         fig_bar, ax = plt.subplots()
         index = range(len(df))
         ax.bar([i - 0.2 for i in index], df["ricavi"], width=0.2, label="Ricavi", color="blue")
@@ -118,7 +117,7 @@ with tab3:
         ax.legend()
         st.pyplot(fig_bar)
 
-        st.write("### 📈 Andamento Utile Netto")
+        st.write("### \U0001f4c8 Andamento Utile Netto")
         fig_line, ax2 = plt.subplots()
         ax2.plot(df["periodo"], df["utile_netto"], marker="o", color="green")
         ax2.set_xlabel("Periodo")
@@ -129,7 +128,7 @@ with tab3:
 
 with tab4:
     if not df.empty:
-        st.write("### 📄 Download PDF")
+        st.write("### \U0001f4c4 Download PDF")
         buffer = BytesIO()
         with PdfPages(buffer) as pdf:
             fig, ax = plt.subplots()
@@ -140,4 +139,4 @@ with tab4:
             table.scale(1, 1.5)
             pdf.savefig(fig, bbox_inches="tight")
         buffer.seek(0)
-        st.download_button("📥 Scarica PDF", buffer, "report_analisi_finanziaria.pdf", "application/pdf")
+        st.download_button("\U0001f4e5 Scarica PDF", buffer, "report_analisi_finanziaria.pdf", "application/pdf")
