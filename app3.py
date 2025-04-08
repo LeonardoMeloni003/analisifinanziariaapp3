@@ -31,7 +31,7 @@ def check_password():
 
 check_password()
 st.set_page_config(page_title="Analisi Finanziaria", layout="wide")
-st.title("\U0001f4ca Analisi Finanziaria - Periodi Dinamici")
+st.title("📊 Analisi Finanziaria - Serramenti Renato Orrù")
 
 # Selezione tipo di periodo
 filtro_periodo = st.sidebar.radio("Periodo da analizzare:", ["Tutti gli anni", "Ultimi 3 anni", "Ultimi 5 anni"])
