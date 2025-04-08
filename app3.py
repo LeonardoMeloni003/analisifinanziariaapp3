@@ -33,7 +33,7 @@ check_password()
 st.set_page_config(page_title="Analisi Finanziaria", layout="wide")
 st.title("\U0001f4ca Analisi Finanziaria - Periodi Dinamici")
 
-# Selezione tipo di periodo
+# Selezione tipo di anno
 tipo_periodo = st.sidebar.selectbox("Periodo di analisi:", ["Annuale", "Mensile", "Settimanale", "Giornaliero"])
 
 # Caricamento dati da Supabase
