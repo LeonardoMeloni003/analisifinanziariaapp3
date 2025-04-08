@@ -113,7 +113,7 @@ with tab3:
         ax.bar(index, df["costi"], width=0.2, label="Costi", color="red")
         ax.bar([i + 0.2 for i in index], df["utile_netto"], width=0.2, label="Utile Netto", color="green")
         ax.set_xticks(index)
-        ax.set_xticklabels(df["periodo"], rotation=45)
+        ax.set_xticklabels(df["anno"], rotation=45)
         ax.set_xlabel("Periodo")
         ax.set_ylabel("Valori (€)")
         ax.legend()
