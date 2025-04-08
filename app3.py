@@ -47,13 +47,17 @@ def load_data():
         st.error("Errore nel recupero dati")
         return pd.DataFrame()
 
-df = load_data()
+def load_data():
+    response = requests.get(f'{SUPABASE_URL}/rest/v1/dati_finanziari?select=*', headers=headers)
+    st.write("Status code:", response.status_code)  # Debug del codice di risposta
+    if response.status_code == 200:
+        df = pd.DataFrame(response.json())
+        df = df.drop(columns=["data"])  # Rimosso uso della colonna 'data' nel DataFrame
+        return df.sort_values("anno") if not df.empty else pd.DataFrame()
+    else:
+        st.error(f"Errore nel recupero dati: {response.text}")  # Mostra l'errore completo
+        return pd.DataFrame()
 
-# Applica filtro periodo
-if filtro_periodo == "Ultimi 3 anni":
-    df = df[df["anno"] >= df["anno"].max() - 2]
-elif filtro_periodo == "Ultimi 5 anni":
-    df = df[df["anno"] >= df["anno"].max() - 4]
 
 # --- TABS ---
 tab1, tab2, tab3, tab4 = st.tabs(["📥 Inserimento", "📊 Dashboard", "📈 Grafici", "📄 PDF"])
