@@ -43,7 +43,7 @@ def load_data():
     st.write("Dettaglio:", response.text)
     if response.status_code == 200:
         df = pd.DataFrame(response.json())
-        return df.sort_values("periodo") if not df.empty else pd.DataFrame()
+        return df.sort_values("anno") if not df.empty else pd.DataFrame()
     else:
         st.error("Errore nel recupero dati")
         return pd.DataFrame()
