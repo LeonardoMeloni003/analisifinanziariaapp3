@@ -39,7 +39,7 @@ tipo_periodo = st.sidebar.selectbox("Periodo di analisi:", ["Annuale", "Mensile"
 # Caricamento dati da Supabase
 def load_data():
     response = requests.get(f'{SUPABASE_URL}/rest/v1/dati_finanziari?select=*', headers=headers)
-        if response.status_code == 200:
+    if response.status_code == 200:
         df = pd.DataFrame(response.json())
         return df.sort_values("anno") if not df.empty else pd.DataFrame()
     else:
