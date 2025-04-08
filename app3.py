@@ -33,7 +33,7 @@ check_password()
 st.set_page_config(page_title="Analisi Finanziaria", layout="wide")
 st.title("\U0001f4ca Analisi Finanziaria - Periodi Dinamici")
 
-# Selezione tipo di anno
+# Selezione tipo di periodo
 tipo_periodo = st.sidebar.selectbox("Periodo di analisi:", ["Annuale", "Mensile", "Settimanale", "Giornaliero"])
 
 # Caricamento dati da Supabase
@@ -53,34 +53,35 @@ tab1, tab2, tab3, tab4 = st.tabs(["\U0001f4e5 Inserimento", "\U0001f4ca Dashboar
 
 with tab1:
     st.subheader("Inserimento Dati")
-    num_righe = st.number_input("Numero di periodi da inserire", min_value=1, max_value=20, value=3)
-    nuove_righe = []
 
-    for i in range(num_righe):
-        st.markdown("---")
-        st.markdown(f"### Periodo {i+1}")
-        col1, col2 = st.columns(2)
-        with col1:
-            periodo_val = st.text_input("Periodo (es. 2024, 2024-03, 2024-03-15)", key=f"periodo_{i}")
-            ricavi = st.number_input("Ricavi", min_value=0.0, step=1000.0, key=f"ricavi_{i}")
-        with col2:
-            costi = st.number_input("Costi", min_value=0.0, step=1000.0, key=f"costi_{i}")
-            utile = ricavi - costi
-            margine = (utile / ricavi * 100) if ricavi else 0
-        nuove_righe.append({
-            "periodo": periodo_val,
-            "ricavi": ricavi,
-            "costi": costi,
-            "utile_netto": utile,
-            "margine": margine
-        })
+    with st.form("form_inserimento"):
+        anno = st.number_input("Anno", min_value=2000, max_value=2100, step=1)
+        ricavi = st.number_input("Ricavi (€)", min_value=0.0, step=1000.0)
+        costi = st.number_input("Costi (€)", min_value=0.0, step=1000.0)
 
-    if st.button("\U0001f4be Salva su Supabase"):
-        requests.delete(f'{SUPABASE_URL}/rest/v1/finanza_periodi?periodo=gt.0', headers=headers)
-        for riga in nuove_righe:
-            requests.post(f'{SUPABASE_URL}/rest/v1/finanza_periodi', headers=headers, json=riga)
-        st.success("\u2705 Dati salvati con successo")
-        st.experimental_rerun()
+        utile = ricavi - costi
+        margine = (utile / ricavi * 100) if ricavi else 0
+
+        st.info(f"Utile Netto: € {utile:,.2f} | Margine: {margine:.2f} %")
+
+        submitted = st.form_submit_button("💾 Salva dati")
+
+        if submitted:
+            if ricavi == 0:
+                st.warning("⚠️ I ricavi devono essere maggiori di zero.")
+            elif anno in df["anno"].values:
+                st.warning(f"⚠️ L'anno {anno} è già presente nei dati.")
+            else:
+                nuova_riga = {
+                    "anno": anno,
+                    "ricavi": ricavi,
+                    "costi": costi,
+                    "utile_netto": utile,
+                    "margine": margine
+                }
+                requests.post(f'{SUPABASE_URL}/rest/v1/dati_finanziari', headers=headers, json=nuova_riga)
+                st.success("✅ Dati salvati con successo")
+                st.experimental_rerun()
 
     st.write("### \U0001f4cb Dati attualmente salvati")
     st.dataframe(df)
@@ -112,7 +113,7 @@ with tab3:
         ax.bar([i + 0.2 for i in index], df["utile_netto"], width=0.2, label="Utile Netto", color="green")
         ax.set_xticks(index)
         ax.set_xticklabels(df["anno"], rotation=45)
-        ax.set_xlabel("Periodo")
+        ax.set_xlabel("Anno")
         ax.set_ylabel("Valori (€)")
         ax.legend()
         st.pyplot(fig_bar)
@@ -120,7 +121,7 @@ with tab3:
         st.write("### \U0001f4c8 Andamento Utile Netto")
         fig_line, ax2 = plt.subplots()
         ax2.plot(df["anno"], df["utile_netto"], marker="o", color="green")
-        ax2.set_xlabel("Periodo")
+        ax2.set_xlabel("Anno")
         ax2.set_ylabel("Utile Netto (€)")
         ax2.set_title("Andamento Utile Netto")
         ax2.grid(True)
