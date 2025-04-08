@@ -34,7 +34,7 @@ st.set_page_config(page_title="Analisi Finanziaria", layout="wide")
 st.title("\U0001f4ca Analisi Finanziaria - Periodi Dinamici")
 
 # Selezione tipo di periodo
-tipo_periodo = st.sidebar.selectbox("Periodo di analisi:", ["Annuale", "Mensile", "Settimanale", "Giornaliero"])
+filtro_periodo = st.sidebar.radio("Periodo da analizzare:", ["Tutti gli anni", "Ultimi 3 anni", "Ultimi 5 anni"])
 
 # Caricamento dati da Supabase
 def load_data():
@@ -47,6 +47,12 @@ def load_data():
         return pd.DataFrame()
 
 df = load_data()
+
+# Applica filtro periodo
+if filtro_periodo == "Ultimi 3 anni":
+    df = df[df["anno"] >= df["anno"].max() - 2]
+elif filtro_periodo == "Ultimi 5 anni":
+    df = df[df["anno"] >= df["anno"].max() - 4]
 
 # --- TABS ---
 tab1, tab2, tab3, tab4 = st.tabs(["\U0001f4e5 Inserimento", "\U0001f4ca Dashboard", "\U0001f4c8 Grafici", "\U0001f4c4 PDF"])
@@ -86,7 +92,7 @@ with tab1:
     st.write("### \U0001f4cb Dati attualmente salvati")
     st.dataframe(df)
 
-    st.write("### \U0001f527 Modifica Dati Esistenti")
+    st.write("### 🔧 Modifica Dati Esistenti")
     for i, row in df.iterrows():
         with st.expander(f"Anno {row['anno']}"):
             nuovo_ricavi = st.number_input(f"Ricavi (€) - {row['anno']}", value=float(row['ricavi']), step=1000.0, key=f"mod_ricavi_{i}")
