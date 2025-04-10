@@ -39,14 +39,6 @@ filtro_periodo = st.sidebar.radio("Periodo da analizzare:", ["Tutti gli anni", "
 # Caricamento dati da Supabase
 def load_data():
     response = requests.get(f'{SUPABASE_URL}/rest/v1/dati_finanziari?select=*', headers=headers)
-st.write("Status code:", response.status_code)
-st.write("Testo della risposta:", response.text)  # Mostra la risposta completa da Supabase
-if response.status_code == 200:
-    df = pd.DataFrame(response.json())
-    st.write("Dati ricevuti:", df.head())  # Mostra i dati ricevuti
-else:
-    st.error(f"Errore nel recupero dati: {response.text}")
-    df = pd.DataFrame()
     if response.status_code == 200:
         df = pd.DataFrame(response.json())
         return df.sort_values("anno") if not df.empty else pd.DataFrame()
@@ -98,10 +90,6 @@ with tab1:
                 st.rerun()
 
     st.write("### \U0001f4cb Dati attualmente salvati")
-    if df.empty:
-    st.warning("I dati sono vuoti.")
-else:
-    st.write("Dati ricevuti:", df.head())  # Mostra le prime righe del DataFrame
     st.dataframe(df)
 
     st.write("### 🔧 Modifica Dati Esistenti")
