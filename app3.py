@@ -41,6 +41,7 @@ def load_data():
     response = requests.get(f'{SUPABASE_URL}/rest/v1/dati_finanziari?select=*', headers=headers)
     if response.status_code == 200:
         df = pd.DataFrame(response.json())
+        df = df.drop(columns=["data"])  # Rimosso l'uso della colonna 'data'
         return df.sort_values("anno") if not df.empty else pd.DataFrame()
     else:
         st.error("Errore nel recupero dati")
@@ -55,7 +56,7 @@ elif filtro_periodo == "Ultimi 5 anni":
     df = df[df["anno"] >= df["anno"].max() - 4]
 
 # --- TABS ---
-tab1, tab2, tab3, tab4 = st.tabs(["\U0001f4e5 Inserimento", "\U0001f4ca Dashboard", "\U0001f4c8 Grafici", "\U0001f4c4 PDF"])
+tab1, tab2, tab3, tab4 = st.tabs(["📥 Inserimento", "📊 Dashboard", "📈 Grafici", "📄 PDF"])
 
 with tab1:
     st.subheader("Inserimento Dati")
@@ -89,7 +90,7 @@ with tab1:
                 st.success("✅ Dati salvati con successo")
                 st.rerun()
 
-    st.write("### \U0001f4cb Dati attualmente salvati")
+    st.write("### 📋 Dati attualmente salvati")
     st.dataframe(df)
 
     st.write("### 🔧 Modifica Dati Esistenti")
@@ -119,24 +120,27 @@ with tab1:
 
 with tab2:
     if not df.empty:
-        df["crescita"] = [0] + [((df["utile_netto"].iloc[i] - df["utile_netto"].iloc[i - 1]) / df["utile_netto"].iloc[i - 1]) * 100
-                              if df["utile_netto"].iloc[i - 1] != 0 else 0
-                              for i in range(1, len(df))]
-        st.metric("\U0001f4c8 Media Utile Netto", f"\u20ac {df['utile_netto'].mean():,.2f}")
-        st.metric("\U0001f4c9 Margine medio %", f"{df['margine'].mean():.2f} %")
-        st.metric("\U0001f4ca Crescita media utile %", f"{df['crescita'].mean():.2f} %")
+        df["crescita"] = [0] + [
+            ((df["utile_netto"].iloc[i] - df["utile_netto"].iloc[i - 1]) / df["utile_netto"].iloc[i - 1]) * 100
+            if df["utile_netto"].iloc[i - 1] != 0 and pd.notna(df["utile_netto"].iloc[i - 1])
+            else 0
+            for i in range(1, len(df))
+        ]
+        st.metric("📈 Media Utile Netto", f"€ {df['utile_netto'].mean():,.2f}")
+        st.metric("📉 Margine medio %", f"{df['margine'].mean():.2f} %")
+        st.metric("📊 Crescita media utile %", f"{df['crescita'].mean():.2f} %")
 
-        st.write("### \U0001f4ac Commento automatico")
+        st.write("### 💬 Commento automatico")
         if df["margine"].mean() > 20:
-            st.success("\U0001f7e2 Margine buono")
+            st.success("🟢 Margine buono")
         elif df["margine"].mean() > 10:
-            st.info("\U0001f7e1 Margine nella media")
+            st.info("🟡 Margine nella media")
         else:
-            st.warning("\U0001f534 Margine basso")
+            st.warning("🔴 Margine basso")
 
 with tab3:
     if not df.empty:
-        st.write("### \U0001f4ca Grafico a Barre")
+        st.write("### 📊 Grafico a Barre")
         fig_bar, ax = plt.subplots()
         index = range(len(df))
         ax.bar([i - 0.2 for i in index], df["ricavi"], width=0.2, label="Ricavi", color="blue")
@@ -149,7 +153,7 @@ with tab3:
         ax.legend()
         st.pyplot(fig_bar)
 
-        st.write("### \U0001f4c8 Andamento Utile Netto")
+        st.write("### 📈 Andamento Utile Netto")
         fig_line, ax2 = plt.subplots()
         ax2.plot(df["anno"], df["utile_netto"], marker="o", color="green")
         ax2.set_xlabel("Anno")
