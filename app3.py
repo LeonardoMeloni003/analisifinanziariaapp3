@@ -154,7 +154,7 @@ with tab2:
 with tab3:
     if not df.empty:
         st.write("### 📊 Grafico a Barre")
-        fig_bar, ax = plt.subplots
+        fig_bar, ax = plt.subplots()
         index = range(len(df))
         ax.bar([i - 0.2 for i in index], df["ricavi"], width=0.2, label="Ricavi", color="blue")
         ax.bar(index, df["costi"], width=0.2, label="Costi", color="red")
