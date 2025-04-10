@@ -176,4 +176,4 @@ with tab4:
             table.scale(1, 1.5)
             pdf.savefig(fig, bbox_inches="tight")
         buffer.seek(0)
-        st.download_button("📥 Scarica PDF", buffer, "report_analisi_finanziaria.pdf", "application/pdf")
+        st.download_button("📥 Scarica PDF", buffer, "report_analisi_finanziaria.pdf",
