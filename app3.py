@@ -70,7 +70,18 @@ with tab1:
         utile = ricavi - costi
         margine = (utile / ricavi * 100) if ricavi else 0
 
-        st.info(f"Utile Netto: € {utile:,.2f} | Margine: {margine:.2f} %")
+        # Recupera l'anno precedente per calcolare la crescita
+        anno_precedente = df[df["anno"] == anno - 1]
+        if not anno_precedente.empty:
+            utile_precedente = anno_precedente["utile_netto"].values[0]
+            if utile_precedente != 0 and pd.notna(utile_precedente):
+                crescita = ((utile - utile_precedente) / utile_precedente) * 100
+            else:
+                crescita = 0
+        else:
+            crescita = 0  # Nessuna crescita se non esiste l'anno precedente
+
+        st.info(f"Utile Netto: € {utile:,.2f} | Margine: {margine:.2f} % | Crescita: {crescita:.2f} %")
 
         submitted = st.form_submit_button("💾 Salva dati")
 
@@ -85,7 +96,8 @@ with tab1:
                     "ricavi": ricavi,
                     "costi": costi,
                     "utile_netto": utile,
-                    "margine": margine
+                    "margine": margine,
+                    "crescita": crescita
                 }
                 requests.post(f'{SUPABASE_URL}/rest/v1/dati_finanziari', headers=headers, json=nuova_riga)
                 st.success("✅ Dati salvati con successo")
