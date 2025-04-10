@@ -42,6 +42,7 @@ def load_data():
     if response.status_code == 200:
         df = pd.DataFrame(response.json())
         df = df.drop(columns=["data"])  # Rimosso l'uso della colonna 'data'
+        df["anno"] = df["anno"].astype(int)  # Rimuove la parte decimale
         return df.sort_values("anno") if not df.empty else pd.DataFrame()
     else:
         st.error("Errore nel recupero dati")
@@ -164,7 +165,7 @@ with tab3:
 
 with tab4:
     if not df.empty:
-        st.write("### \U0001f4c4 Download PDF")
+        st.write("### 📄 Download PDF")
         buffer = BytesIO()
         with PdfPages(buffer) as pdf:
             fig, ax = plt.subplots()
@@ -175,4 +176,4 @@ with tab4:
             table.scale(1, 1.5)
             pdf.savefig(fig, bbox_inches="tight")
         buffer.seek(0)
-        st.download_button("\U0001f4e5 Scarica PDF", buffer, "report_analisi_finanziaria.pdf", "application/pdf")
+        st.download_button("📥 Scarica PDF", buffer, "report_analisi_finanziaria.pdf", "application/pdf")
