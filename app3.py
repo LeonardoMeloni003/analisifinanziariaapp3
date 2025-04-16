@@ -65,6 +65,7 @@ else:
 
 # --- TABS ---
 tab1, tab2, tab3, tab4 = st.tabs(["📥 Inserimento", "📊 Dashboard", "📈 Grafici", "📄 PDF"])
+
 with tab1:
     st.subheader("Inserimento Dati")
 
@@ -76,8 +77,7 @@ with tab1:
         utile = ricavi - costi
         margine = (utile / ricavi * 100) if ricavi else 0
 
-        # Recupera l'anno precedente per calcolare la crescita
-        anno_precedente = df[df["anno"] == anno - 1]
+        anno_precedente = df_originale[df_originale["anno"] == anno - 1]
         if not anno_precedente.empty:
             utile_precedente = anno_precedente["utile_netto"].values[0]
             if utile_precedente != 0 and pd.notna(utile_precedente):
@@ -85,7 +85,7 @@ with tab1:
             else:
                 crescita = 0
         else:
-            crescita = 0  # Nessuna crescita se non esiste l'anno precedente
+            crescita = 0
 
         st.info(f"Utile Netto: € {utile:,.2f} | Margine: {margine:.2f} % | Crescita: {crescita:.2f} %")
 
@@ -94,7 +94,7 @@ with tab1:
         if submitted:
             if ricavi == 0:
                 st.warning("⚠️ I ricavi devono essere maggiori di zero.")
-            elif anno in df["anno"].values:
+            elif anno in df_originale["anno"].values:
                 st.warning(f"⚠️ L'anno {anno} è già presente nei dati.")
             else:
                 nuova_riga = {
@@ -113,7 +113,7 @@ with tab1:
     st.dataframe(df)
 
     st.write("### 🔧 Modifica Dati Esistenti")
-    for i, row in df.iterrows():
+    for i, row in df_originale.iterrows():
         with st.expander(f"Anno {row['anno']}"):
             nuovo_ricavi = st.number_input(f"Ricavi (€) - {row['anno']}", value=float(row['ricavi']), step=1000.0, key=f"mod_ricavi_{i}")
             nuovo_costi = st.number_input(f"Costi (€) - {row['anno']}", value=float(row['costi']), step=1000.0, key=f"mod_costi_{i}")
@@ -136,6 +136,9 @@ with tab1:
                 )
                 st.success(f"Dati aggiornati per l'anno {row['anno']}")
                 st.rerun()
+
+# Resto del codice invariato (tab2, tab3, tab4)
+
 with tab2:
     if not df.empty:
         df = df.sort_values("anno")
