@@ -131,27 +131,47 @@ with tab1:
                 )
                 st.success(f"Dati aggiornati per l'anno {row['anno']}")
                 st.rerun()
-
 with tab2:
     if not df.empty:
+        df = df.sort_values("anno")
         df["crescita"] = [0] + [
             ((df["utile_netto"].iloc[i] - df["utile_netto"].iloc[i - 1]) / df["utile_netto"].iloc[i - 1]) * 100
             if df["utile_netto"].iloc[i - 1] != 0 and pd.notna(df["utile_netto"].iloc[i - 1])
             else 0
             for i in range(1, len(df))
         ]
+
         st.metric("📈 Media Utile Netto", f"€ {df['utile_netto'].mean():,.2f}")
         st.metric("📉 Margine medio %", f"{df['margine'].mean():.2f} %")
         st.metric("📊 Crescita media utile %", f"{df['crescita'].mean():.2f} %")
 
-        st.write("### 💬 Commento automatico")
-        if df["margine"].mean() > 20:
-            st.success("🟢 Margine buono")
-        elif df["margine"].mean() > 10:
-            st.info("🟡 Margine nella media")
-        else:
-            st.warning("🔴 Margine basso")
+        st.write("### 💬 Commento automatico approfondito")
+        ultimo_anno = df["anno"].max()
+        ultimi_3 = df.tail(3)
+        utile_trend = "🔄 Stabile"
+        if len(ultimi_3) >= 3:
+            if ultimi_3["utile_netto"].is_monotonic_increasing:
+                utile_trend = "🟢 In crescita costante"
+            elif ultimi_3["utile_netto"].is_monotonic_decreasing:
+                utile_trend = "🔴 In calo costante"
 
+        margine_medio = df["margine"].mean()
+        if margine_medio > 20:
+            margine_status = "🟢 Margine molto buono"
+        elif margine_medio > 10:
+            margine_status = "🟡 Margine nella media"
+        else:
+            margine_status = "🔴 Margine basso"
+
+        crescita_medio = df["crescita"].mean()
+        if crescita_medio > 5:
+            crescita_status = "📈 Buona crescita media"
+        elif crescita_medio > 0:
+            crescita_status = "➕ Crescita lieve"
+        else:
+            crescita_status = "📉 Attenzione: crescita negativa"
+
+        st.info(f"**Andamento Utile:** {utile_trend}\n\n**Margine medio:** {margine_status}\n\n**Crescita media utile netto:** {crescita_status}")
 with tab3:
     if not df.empty:
         st.write("### 📊 Grafico a Barre")
