@@ -45,18 +45,23 @@ def load_data():
         st.error("Errore nel recupero dati")
         return pd.DataFrame()
 
+# Carica dati completi
 df = load_data()
+df_originale = df.copy()
 
 # Modifica selezione anni con multiselect
-anni_disponibili = sorted(df["anno"].unique().tolist())
+anni_disponibili = sorted(df_originale["anno"].unique().tolist())
 anni_selezionati = st.sidebar.multiselect(
     "Seleziona gli anni da analizzare:", 
     options=anni_disponibili, 
     default=anni_disponibili
 )
 
+# Applica filtro per visualizzazione, ma non per salvataggio
 if anni_selezionati:
-    df = df[df["anno"].isin(anni_selezionati)]
+    df = df_originale[df_originale["anno"].isin(anni_selezionati)]
+else:
+    df = df_originale.copy()
 
 # --- TABS ---
 tab1, tab2, tab3, tab4 = st.tabs(["📥 Inserimento", "📊 Dashboard", "📈 Grafici", "📄 PDF"])
