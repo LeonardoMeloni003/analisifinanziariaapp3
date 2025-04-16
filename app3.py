@@ -129,15 +129,23 @@ with tab1:
                     "utile_netto": nuovo_utile,
                     "margine": nuovo_margine
                 }
-                requests.patch(
+                st.write("🛠️ Sto aggiornando l'anno:", row["anno"])
+                st.write("🔁 Nuovi dati:", updated_row)
+                res = requests.patch(
                     f"{SUPABASE_URL}/rest/v1/dati_finanziari?anno=eq.{row['anno']}",
                     headers=headers,
                     json=updated_row
                 )
-                st.success(f"Dati aggiornati per l'anno {row['anno']}")
-                st.rerun()
+                st.write("📡 Codice risposta:", res.status_code)
+                st.write("📄 Risposta server:", res.text)
+                if res.status_code == 204:
+                    st.success(f"Dati aggiornati per l'anno {row['anno']}")
+                    st.rerun()
+                else:
+                    st.error("❌ Errore nell'aggiornamento. Controlla Supabase.")
 
 # Resto del codice invariato (tab2, tab3, tab4)
+
 
 with tab2:
     if not df.empty:
