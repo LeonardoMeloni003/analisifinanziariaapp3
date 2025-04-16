@@ -216,10 +216,12 @@ with tab3:
 
 with tab4:
     if not df.empty:
-        st.write("### 📄 Download PDF")
+        st.write("### 📄 Download Report")
+
+        # Download PDF
         buffer = BytesIO()
         with PdfPages(buffer) as pdf:
-            # --- Tabella ---
+            # Tabella
             fig_table, ax_table = plt.subplots(figsize=(10, 2 + len(df) * 0.25))
             ax_table.axis("off")
             formatted_df = df.copy()
@@ -237,7 +239,7 @@ with tab4:
             pdf.savefig(fig_table, bbox_inches="tight")
             plt.close(fig_table)
 
-            # --- Grafico a Barre ---
+            # Grafico a Barre
             fig_bar, ax_bar = plt.subplots()
             index = range(len(df))
             ax_bar.bar([i - 0.2 for i in index], df["ricavi"], width=0.2, label="Ricavi", color="blue")
@@ -251,7 +253,7 @@ with tab4:
             pdf.savefig(fig_bar, bbox_inches="tight")
             plt.close(fig_bar)
 
-            # --- Grafico Lineare ---
+            # Grafico Lineare
             fig_line, ax_line = plt.subplots()
             ax_line.plot(df["anno"], df["utile_netto"], marker="o", color="green")
             ax_line.set_xlabel("Anno")
@@ -263,3 +265,14 @@ with tab4:
 
         buffer.seek(0)
         st.download_button("📥 Scarica PDF", buffer, "report_analisi_finanziaria.pdf")
+
+        # Download Excel
+        excel_buffer = BytesIO()
+        df.to_excel(excel_buffer, index=False)
+        excel_buffer.seek(0)
+        st.download_button(
+            label="📊 Scarica Excel",
+            data=excel_buffer,
+            file_name="analisi_finanziaria.xlsx",
+            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        )
