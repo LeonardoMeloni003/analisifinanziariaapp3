@@ -1,4 +1,3 @@
-
 import streamlit as st
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -23,6 +22,7 @@ def check_password():
             st.session_state["password_correct"] = True
         else:
             st.session_state["password_correct"] = False
+
     if "password_correct" not in st.session_state:
         st.text_input("🔒 Inserisci la password per accedere:", type="password", on_change=password_entered, key="password")
         st.stop()
@@ -39,23 +39,29 @@ def load_data():
     response = requests.get(f'{SUPABASE_URL}/rest/v1/dati_finanziari?select=*', headers=headers)
     if response.status_code == 200:
         df = pd.DataFrame(response.json())
-        df = df.drop(columns=["data"], errors='ignore')  # Rimosso l'uso della colonna 'data'
-        df["anno"] = df["anno"].astype(int)  # Rimuove la parte decimale
-        return df.sort_values("anno") if not df.empty else pd.DataFrame()
+        if df.empty or "anno" not in df.columns:
+            st.warning("⚠️ Non ci sono dati disponibili o la colonna 'anno' è mancante.")
+            return pd.DataFrame(columns=["anno", "ricavi", "costi", "utile_netto", "margine", "crescita"])
+        df = df.drop(columns=["data"], errors='ignore')
+        df["anno"] = df["anno"].astype(int)
+        return df.sort_values("anno")
     else:
-        st.error("Errore nel recupero dati")
-        return pd.DataFrame()
+        st.error("Errore nel recupero dati da Supabase.")
+        return pd.DataFrame(columns=["anno", "ricavi", "costi", "utile_netto", "margine", "crescita"])
 
 df = load_data()
 
 # Selezione anni da analizzare
-anni_disponibili = df["anno"].unique().tolist()
-anni_disponibili.sort()
-anni_selezionati = st.sidebar.multiselect("Seleziona gli anni da analizzare:", options=anni_disponibili, default=anni_disponibili)
+if not df.empty:
+    anni_disponibili = sorted(df["anno"].unique().tolist())
+    anni_selezionati = st.sidebar.multiselect(
+        "Seleziona gli anni da analizzare:", 
+        options=anni_disponibili, 
+        default=anni_disponibili
+    )
 
-# Applica filtro anni selezionati
-if anni_selezionati:
-    df = df[df["anno"].isin(anni_selezionati)]
+    if anni_selezionati:
+        df = df[df["anno"].isin(anni_selezionati)]
 
 # --- TABS ---
 tab1, tab2, tab3, tab4 = st.tabs(["📥 Inserimento", "📊 Dashboard", "📈 Grafici", "📄 PDF"])
@@ -71,16 +77,12 @@ with tab1:
         utile = ricavi - costi
         margine = (utile / ricavi * 100) if ricavi else 0
 
-        # Recupera l'anno precedente per calcolare la crescita
         anno_precedente = df[df["anno"] == anno - 1]
+        crescita = 0
         if not anno_precedente.empty:
             utile_precedente = anno_precedente["utile_netto"].values[0]
             if utile_precedente != 0 and pd.notna(utile_precedente):
                 crescita = ((utile - utile_precedente) / utile_precedente) * 100
-            else:
-                crescita = 0
-        else:
-            crescita = 0  # Nessuna crescita se non esiste l'anno precedente
 
         st.info(f"Utile Netto: € {utile:,.2f} | Margine: {margine:.2f} % | Crescita: {crescita:.2f} %")
 
@@ -93,11 +95,11 @@ with tab1:
                 st.warning(f"⚠️ L'anno {anno} è già presente nei dati.")
             else:
                 nuova_riga = {
-                    "anno": anno,
-                    "ricavi": ricavi,
-                    "costi": costi,
-                    "utile_netto": utile,
-                    "margine": margine,
+                    "anno": anno, 
+                    "ricavi": ricavi, 
+                    "costi": costi, 
+                    "utile_netto": utile, 
+                    "margine": margine, 
                     "crescita": crescita
                 }
                 requests.post(f'{SUPABASE_URL}/rest/v1/dati_finanziari', headers=headers, json=nuova_riga)
@@ -117,77 +119,33 @@ with tab1:
             nuovo_margine = (nuovo_utile / nuovo_ricavi * 100) if nuovo_ricavi else 0
             st.info(f"Utile: €{nuovo_utile:,.2f} | Margine: {nuovo_margine:.2f}%")
 
-        
-            if st.button(f"💾 Salva Modifiche - {row['anno']}"):
-                updated_row = {
-                    "ricavi": nuovo_ricavi,
-                    "costi": nuovo_costi,
-                    "utile_netto": nuovo_utile,
-                    "margine": nuovo_margine
-                }
-                requests.patch(
-                    f"{SUPABASE_URL}/rest/v1/dati_finanziari?anno=eq.{row['anno']}",
-                    headers=headers,
-                    json=updated_row
-                )
-                st.success(f"Dati aggiornati per l'anno {row['anno']}")
-                st.rerun()
-
 with tab2:
+    st.subheader("Dashboard")
     if not df.empty:
-        df["crescita"] = [0] + [
-            ((df["utile_netto"].iloc[i] - df["utile_netto"].iloc[i - 1]) / df["utile_netto"].iloc[i - 1]) * 100
-            if df["utile_netto"].iloc[i - 1] != 0 and pd.notna(df["utile_netto"].iloc[i - 1])
-            else 0
-            for i in range(1, len(df))
-        ]
         st.metric("📈 Media Utile Netto", f"€ {df['utile_netto'].mean():,.2f}")
         st.metric("📉 Margine medio %", f"{df['margine'].mean():.2f} %")
-        st.metric("📊 Crescita media utile %", f"{df['crescita'].mean():.2f} %")
-
-        st.write("### 💬 Commento automatico")
-        if df["margine"].mean() > 20:
-            st.success("🟢 Margine buono")
-        elif df["margine"].mean() > 10:
-            st.info("🟡 Margine nella media")
-        else:
-            st.warning("🔴 Margine basso")
 
 with tab3:
+    st.subheader("Grafici")
     if not df.empty:
-        st.write("### 📊 Grafico a Barre")
-        fig_bar, ax = plt.subplots()
-        index = range(len(df))
-        ax.bar([i - 0.2 for i in index], df["ricavi"], width=0.2, label="Ricavi", color="blue")
-        ax.bar(index, df["costi"], width=0.2, label="Costi", color="red")
-        ax.bar([i + 0.2 for i in index], df["utile_netto"], width=0.2, label="Utile Netto", color="green")
-        ax.set_xticks(index)
-        ax.set_xticklabels(df["anno"], rotation=45)
-        ax.set_xlabel("Anno")
-        ax.set_ylabel("Valori (€)")
-        ax.legend()
-        st.pyplot(fig_bar)
-
-        st.write("### 📈 Andamento Utile Netto")
-        fig_line, ax2 = plt.subplots()
-        ax2.plot(df["anno"], df["utile_netto"], marker="o", color="green")
-        ax2.set_xlabel("Anno")
-        ax2.set_ylabel("Utile Netto (€)")
-        ax2.set_title("Andamento Utile Netto")
-        ax2.grid(True)
-        st.pyplot(fig_line)
+        fig, ax = plt.subplots()
+        df.plot.bar(x='anno', y=['ricavi', 'costi', 'utile_netto'], ax=ax)
+        plt.xticks(rotation=45)
+        plt.xlabel('Anno')
+        plt.ylabel('Valori (€)')
+        st.pyplot(fig)
 
 with tab4:
+    st.subheader("Download PDF")
     if not df.empty:
-        st.write("### 📄 Download PDF")
         buffer = BytesIO()
         with PdfPages(buffer) as pdf:
             fig, ax = plt.subplots()
-            ax.axis("off")
-            table = ax.table(cellText=df.values, colLabels=df.columns, loc="center", cellLoc="center")
+            ax.axis('off')
+            table = ax.table(cellText=df.values, colLabels=df.columns, loc='center', cellLoc='center')
             table.auto_set_font_size(False)
             table.set_fontsize(8)
             table.scale(1, 1.5)
-            pdf.savefig(fig, bbox_inches="tight")
+            pdf.savefig(fig, bbox_inches='tight')
         buffer.seek(0)
         st.download_button("📥 Scarica PDF", buffer, "report_analisi_finanziaria.pdf")
