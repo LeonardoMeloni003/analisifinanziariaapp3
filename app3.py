@@ -60,8 +60,6 @@ if anni_selezionati:
 
 # --- TABS ---
 tab1, tab2, tab3, tab4 = st.tabs(["📥 Inserimento", "📊 Dashboard", "📈 Grafici", "📄 PDF"])
-
-
 with tab1:
     st.subheader("Inserimento Dati")
 
@@ -183,12 +181,47 @@ with tab4:
         st.write("### 📄 Download PDF")
         buffer = BytesIO()
         with PdfPages(buffer) as pdf:
-            fig, ax = plt.subplots()
-            ax.axis("off")
-            table = ax.table(cellText=df.values, colLabels=df.columns, loc="center", cellLoc="center")
+            # --- Tabella ---
+            fig_table, ax_table = plt.subplots(figsize=(10, 2 + len(df) * 0.25))
+            ax_table.axis("off")
+            formatted_df = df.copy()
+            for col in formatted_df.select_dtypes(include=["float"]).columns:
+                formatted_df[col] = formatted_df[col].map(lambda x: f"{x:,.2f}")
+            table = ax_table.table(
+                cellText=formatted_df.values,
+                colLabels=formatted_df.columns,
+                loc="center",
+                cellLoc="center"
+            )
             table.auto_set_font_size(False)
             table.set_fontsize(8)
             table.scale(1, 1.5)
-            pdf.savefig(fig, bbox_inches="tight")
+            pdf.savefig(fig_table, bbox_inches="tight")
+            plt.close(fig_table)
+
+            # --- Grafico a Barre ---
+            fig_bar, ax_bar = plt.subplots()
+            index = range(len(df))
+            ax_bar.bar([i - 0.2 for i in index], df["ricavi"], width=0.2, label="Ricavi", color="blue")
+            ax_bar.bar(index, df["costi"], width=0.2, label="Costi", color="red")
+            ax_bar.bar([i + 0.2 for i in index], df["utile_netto"], width=0.2, label="Utile Netto", color="green")
+            ax_bar.set_xticks(index)
+            ax_bar.set_xticklabels(df["anno"], rotation=45)
+            ax_bar.set_xlabel("Anno")
+            ax_bar.set_ylabel("Valori (€)")
+            ax_bar.legend()
+            pdf.savefig(fig_bar, bbox_inches="tight")
+            plt.close(fig_bar)
+
+            # --- Grafico Lineare ---
+            fig_line, ax_line = plt.subplots()
+            ax_line.plot(df["anno"], df["utile_netto"], marker="o", color="green")
+            ax_line.set_xlabel("Anno")
+            ax_line.set_ylabel("Utile Netto (€)")
+            ax_line.set_title("Andamento Utile Netto")
+            ax_line.grid(True)
+            pdf.savefig(fig_line, bbox_inches="tight")
+            plt.close(fig_line)
+
         buffer.seek(0)
         st.download_button("📥 Scarica PDF", buffer, "report_analisi_finanziaria.pdf")
