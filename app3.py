@@ -1,3 +1,4 @@
+
 import streamlit as st
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -7,7 +8,7 @@ import requests
 
 # --- CONFIGURAZIONE SUPABASE ---
 SUPABASE_URL = "https://fpblplgqvekuekorumkr.supabase.co"
-SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZwYmxwbGdxdmVrdWVrb3J1bWtyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDI5NzY0MjAsImV4cCI6MjA1ODU1MjQyMH0.oPFXbOcbbhqOqkpOYyXJ2PLaXLyCwHdC-sWZ_186k0g"
+SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
 headers = {
     "apikey": SUPABASE_KEY,
     "Authorization": f"Bearer {SUPABASE_KEY}",
@@ -23,25 +24,22 @@ def check_password():
         else:
             st.session_state["password_correct"] = False
     if "password_correct" not in st.session_state:
-        st.text_input("\U0001f512 Inserisci la password per accedere:", type="password", on_change=password_entered, key="password")
+        st.text_input("🔒 Inserisci la password per accedere:", type="password", on_change=password_entered, key="password")
         st.stop()
     elif not st.session_state["password_correct"]:
-        st.text_input("\u274c Password errata. Riprova:", type="password", on_change=password_entered, key="password")
+        st.text_input("❌ Password errata. Riprova:", type="password", on_change=password_entered, key="password")
         st.stop()
 
 check_password()
 st.set_page_config(page_title="Analisi Finanziaria", layout="wide")
 st.title("📊 Analisi Finanziaria - Serramenti Renato Orrù")
 
-# Selezione tipo di periodo
-filtro_periodo = st.sidebar.radio("Periodo da analizzare:", ["Tutti gli anni", "Ultimi 3 anni", "Ultimi 5 anni"])
-
 # Caricamento dati da Supabase
 def load_data():
     response = requests.get(f'{SUPABASE_URL}/rest/v1/dati_finanziari?select=*', headers=headers)
     if response.status_code == 200:
         df = pd.DataFrame(response.json())
-        df = df.drop(columns=["data"])  # Rimosso l'uso della colonna 'data'
+        df = df.drop(columns=["data"], errors='ignore')  # Rimosso l'uso della colonna 'data'
         df["anno"] = df["anno"].astype(int)  # Rimuove la parte decimale
         return df.sort_values("anno") if not df.empty else pd.DataFrame()
     else:
@@ -50,11 +48,14 @@ def load_data():
 
 df = load_data()
 
-# Applica filtro periodo
-if filtro_periodo == "Ultimi 3 anni":
-    df = df[df["anno"] >= df["anno"].max() - 2]
-elif filtro_periodo == "Ultimi 5 anni":
-    df = df[df["anno"] >= df["anno"].max() - 4]
+# Selezione anni da analizzare
+anni_disponibili = df["anno"].unique().tolist()
+anni_disponibili.sort()
+anni_selezionati = st.sidebar.multiselect("Seleziona gli anni da analizzare:", options=anni_disponibili, default=anni_disponibili)
+
+# Applica filtro anni selezionati
+if anni_selezionati:
+    df = df[df["anno"].isin(anni_selezionati)]
 
 # --- TABS ---
 tab1, tab2, tab3, tab4 = st.tabs(["📥 Inserimento", "📊 Dashboard", "📈 Grafici", "📄 PDF"])
@@ -116,6 +117,7 @@ with tab1:
             nuovo_margine = (nuovo_utile / nuovo_ricavi * 100) if nuovo_ricavi else 0
             st.info(f"Utile: €{nuovo_utile:,.2f} | Margine: {nuovo_margine:.2f}%")
 
+        
             if st.button(f"💾 Salva Modifiche - {row['anno']}"):
                 updated_row = {
                     "ricavi": nuovo_ricavi,
