@@ -67,6 +67,19 @@ except Exception as e:
 
 # TABS
 tab1, tab2, tab3, tab4, tab5 = st.tabs(["📥 Inserimento", "📊 Dashboard", "📈 Grafici", "📄 PDF", "📆 Analisi Mensile"])
+# --- Caricamento dati annuali ---
+@st.cache_data
+def load_data_annuali():
+    response = requests.get(f"{SUPABASE_URL}/rest/v1/dati_finanziari?select=*", headers=headers)
+    if response.status_code == 200:
+        df = pd.DataFrame(response.json())
+        if "anno" in df.columns:
+            df["anno"] = df["anno"].astype(int)
+        return df
+    else:
+        return pd.DataFrame()
+
+df = load_data_annuali()
 
 with tab1:
     st.subheader("Inserimento Dati")
@@ -153,7 +166,7 @@ with tab1:
     else:
         st.warning("⚠️ Nessun dato disponibile da modificare.")
 
-# Resto del codice invariato (tab2, tab3, tab4)
+
 
 with tab2:
     if not df.empty:
