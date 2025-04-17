@@ -4,6 +4,7 @@ import matplotlib.pyplot as plt
 from io import BytesIO
 from matplotlib.backends.backend_pdf import PdfPages
 import requests
+import datetime
 
 # --- CONFIGURAZIONE SUPABASE ---
 SUPABASE_URL = "https://fpblplgqvekuekorumkr.supabase.co"
