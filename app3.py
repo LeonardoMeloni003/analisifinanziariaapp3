@@ -295,6 +295,20 @@ with tab4:
             file_name="analisi_finanziaria.xlsx",
             mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
         )
+# --- Caricamento dati mensili ---
+@st.cache_data
+def load_data_mensili():
+    response = requests.get(f"{SUPABASE_URL}/rest/v1/dati_mensili?select=*", headers=headers)
+    if response.status_code == 200:
+        df_mens = pd.DataFrame(response.json())
+        if "data" in df_mens.columns:
+            df_mens["data"] = pd.to_datetime(df_mens["data"], errors='coerce')
+        return df_mens
+    else:
+        st.warning("⚠️ Errore nel recupero dati mensili")
+        return pd.DataFrame()
+
+df_mensile = load_data_mensili()
 with tab5:
     st.subheader("📆 Inserimento e analisi mensile")
 
