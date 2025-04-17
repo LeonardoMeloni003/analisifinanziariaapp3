@@ -348,9 +348,38 @@ with tab5:
 
     st.write("### 📋 Dati mensili registrati")
     if not df_mensile.empty:
-        df_mensile["mese_nome"] = df_mensile["data"].dt.strftime('%b %Y')
+        df_mensile["mese_nome"] = df_mensile["data"].dt.strftime('%B %Y')
         df_mensile_sorted = df_mensile.sort_values("data")
         st.dataframe(df_mensile_sorted)
+
+        st.write("### 🔧 Modifica Dati Mensili")
+        for i, row in df_mensile_sorted.iterrows():
+            with st.expander(f"{row['mese_nome']}"):
+                nuovo_ricavi = st.number_input(f"Ricavi (€) - {row['mese_nome']}", value=float(row['ricavi_mensili']), step=100.0, key=f"mod_ricavi_mens_{i}")
+                nuovo_costi = st.number_input(f"Costi (€) - {row['mese_nome']}", value=float(row['costi_mensili']), step=100.0, key=f"mod_costi_mens_{i}")
+
+                nuovo_utile = nuovo_ricavi - nuovo_costi
+                nuovo_margine = (nuovo_utile / nuovo_ricavi * 100) if nuovo_ricavi else 0
+                st.info(f"Utile: €{nuovo_utile:,.2f} | Margine: {nuovo_margine:.2f}%")
+
+                if st.button(f"💾 Salva Modifiche - {row['mese_nome']}"):
+                    updated_row = {
+                        "ricavi_mensili": nuovo_ricavi,
+                        "costi_mensili": nuovo_costi,
+                        "utile_netto_mensile": nuovo_utile,
+                        "margine_mensile": nuovo_margine
+                    }
+                    id_riga = row["id"]
+                    res = requests.patch(
+                        f"{SUPABASE_URL}/rest/v1/dati_mensili?id=eq.{id_riga}",
+                        headers=headers,
+                        json=updated_row
+                    )
+                    if res.status_code == 204:
+                        st.success(f"Dati aggiornati per {row['mese_nome']}")
+                        st.rerun()
+                    else:
+                        st.error("❌ Errore nell'aggiornamento. Controlla Supabase.")
 
         st.write("### 📊 Grafico mensile")
         fig_mensile, ax = plt.subplots()
