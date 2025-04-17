@@ -1,14 +1,14 @@
 import streamlit as st
 import pandas as pd
 import matplotlib.pyplot as plt
+import datetime
 from io import BytesIO
 from matplotlib.backends.backend_pdf import PdfPages
 import requests
-import datetime
 
 # --- CONFIGURAZIONE SUPABASE ---
 SUPABASE_URL = "https://fpblplgqvekuekorumkr.supabase.co"
-SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZwYmxwbGdxdmVrdWVrb3J1bWtyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDI5NzY0MjAsImV4cCI6MjA1ODU1MjQyMH0.oPFXbOcbbhqOqkpOYyXJ2PLaXLyCwHdC-sWZ_186k0g"
+SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
 headers = {
     "apikey": SUPABASE_KEY,
     "Authorization": f"Bearer {SUPABASE_KEY}",
@@ -35,7 +35,8 @@ st.set_page_config(page_title="Analisi Finanziaria", layout="wide")
 st.title("📊 Analisi Finanziaria - Serramenti Renato Orrù")
 
 # Caricamento dati da Supabase
-def load_data():
+@st.cache_data
+def load_data_annuali():
     response = requests.get(f'{SUPABASE_URL}/rest/v1/dati_finanziari?select=*', headers=headers)
     if response.status_code == 200:
         df = pd.DataFrame(response.json())
@@ -43,47 +44,36 @@ def load_data():
         df["anno"] = df["anno"].astype(int)
         return df.sort_values("anno") if not df.empty else pd.DataFrame()
     else:
-        st.error("Errore nel recupero dati")
+        st.error("Errore nel recupero dati annuali")
         return pd.DataFrame()
 
-# Carica dati completi
-df = load_data()
-df_originale = df.copy()
+def load_data_mensili():
+    response = requests.get(f'{SUPABASE_URL}/rest/v1/dati_mensili?select=*', headers=headers)
+    if response.status_code == 200:
+        df = pd.DataFrame(response.json())
+        df["data"] = pd.to_datetime(df["data"], errors='coerce')
+        return df.sort_values("data") if not df.empty else pd.DataFrame()
+    else:
+        st.error("Errore nel recupero dati mensili")
+        return pd.DataFrame()
 
-# Modifica selezione anni con multiselect
-anni_disponibili = sorted(df_originale["anno"].unique().tolist())
-anni_selezionati = st.sidebar.multiselect(
-    "Seleziona gli anni da analizzare:", 
-    options=anni_disponibili, 
-    default=anni_disponibili
-)
+df = load_data_annuali()
+df_mensile = load_data_mensili()
 
-# Applica filtro per visualizzazione, ma non per salvataggio
-if anni_selezionati:
-    df = df_originale[df_originale["anno"].isin(anni_selezionati)]
-else:
-    df = df_originale.copy()
-
-# --- TABS ---
-tab1, tab2, tab3, tab4 = st.tabs(["📥 Inserimento", "📊 Dashboard", "📈 Grafici", "📄 PDF"])
+# TABS
+tab1, tab2, tab3, tab4, tab5 = st.tabs(["📥 Inserimento", "📊 Dashboard", "📈 Grafici", "📄 PDF", "📆 Analisi Mensile"])
 
 with tab1:
     st.subheader("Inserimento Dati")
 
     with st.form("form_inserimento"):
         anno = st.number_input("Anno", min_value=2000, max_value=2100, step=1)
-
-        # Mese opzionale con nomi in italiano
-        mesi_italiani = ["(opzionale)", "Gennaio", "Febbraio", "Marzo", "Aprile", "Maggio", "Giugno", "Luglio", "Agosto", "Settembre", "Ottobre", "Novembre", "Dicembre"]
-        mese_selezionato = st.selectbox("Mese di riferimento (opzionale)", options=range(0, 13), format_func=lambda x: mesi_italiani[x])
-
         ricavi = st.number_input("Ricavi (€)", min_value=0.0, step=1000.0)
         costi = st.number_input("Costi (€)", min_value=0.0, step=1000.0)
 
         utile = ricavi - costi
         margine = (utile / ricavi * 100) if ricavi else 0
 
-        # Calcolo crescita rispetto all'anno precedente
         anno_precedente = df_originale[df_originale["anno"] == anno - 1]
         if not anno_precedente.empty:
             utile_precedente = anno_precedente["utile_netto"].values[0]
@@ -94,10 +84,7 @@ with tab1:
         else:
             crescita = 0
 
-        # Solo se il mese è selezionato, costruisce la data
-        data = f"{anno}-{mese_selezionato:02d}-01" if mese_selezionato != 0 else None
-
-        st.info(f"Utile Netto: € {utile:,.2f} | Margine: {margine:.2f}% | Crescita: {crescita:.2f}%")
+        st.info(f"Utile Netto: € {utile:,.2f} | Margine: {margine:.2f} % | Crescita: {crescita:.2f} %")
 
         submitted = st.form_submit_button("💾 Salva dati")
 
@@ -115,9 +102,6 @@ with tab1:
                     "margine": margine,
                     "crescita": crescita
                 }
-                if data:
-                    nuova_riga["data"] = data
-
                 requests.post(f'{SUPABASE_URL}/rest/v1/dati_finanziari', headers=headers, json=nuova_riga)
                 st.success("✅ Dati salvati con successo")
                 st.rerun()
@@ -126,7 +110,7 @@ with tab1:
     st.dataframe(df)
 
     st.write("### 🔧 Modifica Dati Esistenti")
-    for i, row in df.iterrows():
+    for i, row in df_originale.iterrows():
         with st.expander(f"Anno {row['anno']}"):
             nuovo_ricavi = st.number_input(f"Ricavi (€) - {row['anno']}", value=float(row['ricavi']), step=1000.0, key=f"mod_ricavi_{i}")
             nuovo_costi = st.number_input(f"Costi (€) - {row['anno']}", value=float(row['costi']), step=1000.0, key=f"mod_costi_{i}")
@@ -142,13 +126,24 @@ with tab1:
                     "utile_netto": nuovo_utile,
                     "margine": nuovo_margine
                 }
-                requests.patch(
-                    f"{SUPABASE_URL}/rest/v1/dati_finanziari?anno=eq.{int(row['anno'])}",
+                anno_int = int(row["anno"])
+                st.write("🛠️ Sto aggiornando l'anno:", anno_int)
+                st.write("🔁 Nuovi dati:", updated_row)
+                res = requests.patch(
+                    f"{SUPABASE_URL}/rest/v1/dati_finanziari?anno=eq.{anno_int}",
                     headers=headers,
                     json=updated_row
                 )
-                st.success(f"Dati aggiornati per l'anno {row['anno']}")
-                st.rerun()
+                st.write("📡 Codice risposta:", res.status_code)
+                st.write("📄 Risposta server:", res.text)
+                if res.status_code == 204:
+                    st.success(f"Dati aggiornati per l'anno {anno_int}")
+                    st.rerun()
+                else:
+                    st.error("❌ Errore nell'aggiornamento. Controlla Supabase.")
+
+# Resto del codice invariato (tab2, tab3, tab4)
+
 
 with tab2:
     if not df.empty:
@@ -277,3 +272,49 @@ with tab4:
             file_name="analisi_finanziaria.xlsx",
             mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
         )
+with tab5:
+    st.subheader("📆 Inserimento e analisi mensile")
+
+    with st.form("form_mensile"):
+        anno_mese = st.number_input("Anno", min_value=2000, max_value=2100, step=1, key="anno_mese")
+        mesi_italiani = ["Gennaio", "Febbraio", "Marzo", "Aprile", "Maggio", "Giugno", "Luglio", "Agosto", "Settembre", "Ottobre", "Novembre", "Dicembre"]
+        mese = st.selectbox("Mese", options=range(1, 13), format_func=lambda x: mesi_italiani[x - 1])
+
+        ricavi_mens = st.number_input("Ricavi mensili (€)", min_value=0.0, step=100.0)
+        costi_mens = st.number_input("Costi mensili (€)", min_value=0.0, step=100.0)
+
+        utile_mens = ricavi_mens - costi_mens
+        margine_mens = (utile_mens / ricavi_mens * 100) if ricavi_mens else 0
+
+        data_mens = f"{anno_mese}-{mese:02d}-01"
+
+        st.info(f"Utile netto mensile: € {utile_mens:,.2f} | Margine: {margine_mens:.2f}%")
+
+        invia_mensile = st.form_submit_button("💾 Salva dati mensili")
+
+        if invia_mensile:
+            nuova_riga_mensile = {
+                "anno": anno_mese,
+                "mese": mese,
+                "data": data_mens,
+                "ricavi_mensili": ricavi_mens,
+                "costi_mensili": costi_mens,
+                "utile_netto_mensile": utile_mens,
+                "margine_mensile": margine_mens
+            }
+            requests.post(f'{SUPABASE_URL}/rest/v1/dati_mensili', headers=headers, json=nuova_riga_mensile)
+            st.success("✅ Dati mensili salvati con successo")
+            st.rerun()
+
+    st.write("### 📋 Dati mensili registrati")
+    st.dataframe(df_mensile)
+
+    if not df_mensile.empty:
+        st.write("### 📊 Grafico mensile")
+        fig_mensile, ax = plt.subplots()
+        df_mensile["mese_nome"] = df_mensile["data"].dt.strftime('%b %Y')
+        ax.bar(df_mensile["mese_nome"], df_mensile["utile_netto_mensile"], color='green')
+        ax.set_ylabel("Utile Netto (€)")
+        ax.set_title("Andamento utile netto mensile")
+        plt.xticks(rotation=45)
+        st.pyplot(fig_mensile)
