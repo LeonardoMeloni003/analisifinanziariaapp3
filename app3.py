@@ -325,19 +325,25 @@ with tab5:
                 "utile_netto_mensile": utile_mens,
                 "margine_mensile": margine_mens
             }
-            requests.post(f'{SUPABASE_URL}/rest/v1/dati_mensili', headers=headers, json=nuova_riga_mensile)
-            st.success("✅ Dati mensili salvati con successo")
-            st.rerun()
+            res = requests.post(f'{SUPABASE_URL}/rest/v1/dati_mensili', headers=headers, json=nuova_riga_mensile)
+            if res.status_code in [200, 201, 204]:
+                st.success("✅ Dati mensili salvati con successo")
+                st.rerun()
+            else:
+                st.error(f"❌ Errore nel salvataggio. Codice {res.status_code}")
 
     st.write("### 📋 Dati mensili registrati")
-    st.dataframe(df_mensile)
-
     if not df_mensile.empty:
+        df_mensile["mese_nome"] = df_mensile["data"].dt.strftime('%b %Y')
+        df_mensile_sorted = df_mensile.sort_values("data")
+        st.dataframe(df_mensile_sorted)
+
         st.write("### 📊 Grafico mensile")
         fig_mensile, ax = plt.subplots()
-        df_mensile["mese_nome"] = df_mensile["data"].dt.strftime('%b %Y')
-        ax.bar(df_mensile["mese_nome"], df_mensile["utile_netto_mensile"], color='green')
+        ax.bar(df_mensile_sorted["mese_nome"], df_mensile_sorted["utile_netto_mensile"], color='green')
         ax.set_ylabel("Utile Netto (€)")
         ax.set_title("Andamento utile netto mensile")
         plt.xticks(rotation=45)
         st.pyplot(fig_mensile)
+    else:
+        st.info("ℹ️ Nessun dato mensile disponibile.")
