@@ -1,5 +1,7 @@
 import streamlit as st
 import pandas as pd
+import streamlit as st
+import pandas as pd
 import matplotlib.pyplot as plt
 import datetime
 from io import BytesIO
@@ -17,12 +19,14 @@ headers = {
 
 PASSWORD = "analisi2024"
 
+# --- AUTENTICAZIONE ---
 def check_password():
     def password_entered():
         if st.session_state["password"] == PASSWORD:
             st.session_state["password_correct"] = True
         else:
             st.session_state["password_correct"] = False
+
     if "password_correct" not in st.session_state:
         st.text_input("🔒 Inserisci la password per accedere:", type="password", on_change=password_entered, key="password")
         st.stop()
@@ -34,31 +38,32 @@ check_password()
 st.set_page_config(page_title="Analisi Finanziaria", layout="wide")
 st.title("📊 Analisi Finanziaria - Serramenti Renato Orrù")
 
-# Caricamento dati da Supabase
-@st.cache_data
-def load_data_annuali():
-    response = requests.get(f'{SUPABASE_URL}/rest/v1/dati_finanziari?select=*', headers=headers)
-    if response.status_code == 200:
-        df = pd.DataFrame(response.json())
-        df = df.drop(columns=["data"], errors='ignore')
-        df["anno"] = df["anno"].astype(int)
-        return df.sort_values("anno") if not df.empty else pd.DataFrame()
-    else:
-        st.error("Errore nel recupero dati annuali")
-        return pd.DataFrame()
+# --- TEST CONNESSIONE SUPABASE ---
+st.write("### 🧪 Test connessione Supabase")
 
-def load_data_mensili():
-    response = requests.get(f'{SUPABASE_URL}/rest/v1/dati_mensili?select=*', headers=headers)
-    if response.status_code == 200:
-        df = pd.DataFrame(response.json())
-        df["data"] = pd.to_datetime(df["data"], errors='coerce')
-        return df.sort_values("data") if not df.empty else pd.DataFrame()
-    else:
-        st.error("Errore nel recupero dati mensili")
-        return pd.DataFrame()
+try:
+    test_response = requests.get(
+        f"{SUPABASE_URL}/rest/v1/dati_finanziari?select=*",
+        headers={
+            "apikey": SUPABASE_KEY,
+            "Authorization": f"Bearer {SUPABASE_KEY}"
+        }
+    )
 
-df = load_data_annuali()
-df_mensile = load_data_mensili()
+    if test_response.status_code == 200:
+        st.success("✅ Connessione a Supabase riuscita!")
+        dati_test = test_response.json()
+        if dati_test:
+            st.write("📦 Dati ricevuti:", dati_test[:1])
+        else:
+            st.info("ℹ️ Connessione ok, ma nessun dato trovato.")
+    else:
+        st.error(f"❌ Errore nella richiesta: {test_response.status_code}")
+        st.code(test_response.text)
+
+except Exception as e:
+    st.error(f"❌ Eccezione nella richiesta: {e}")
+
 
 # TABS
 tab1, tab2, tab3, tab4, tab5 = st.tabs(["📥 Inserimento", "📊 Dashboard", "📈 Grafici", "📄 PDF", "📆 Analisi Mensile"])
