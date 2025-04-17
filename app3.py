@@ -62,7 +62,6 @@ df_mensile = load_data_mensili()
 
 # TABS
 tab1, tab2, tab3, tab4, tab5 = st.tabs(["📥 Inserimento", "📊 Dashboard", "📈 Grafici", "📄 PDF", "📆 Analisi Mensile"])
-
 with tab1:
     st.subheader("Inserimento Dati")
 
@@ -74,7 +73,7 @@ with tab1:
         utile = ricavi - costi
         margine = (utile / ricavi * 100) if ricavi else 0
 
-        anno_precedente = df_originale[df_originale["anno"] == anno - 1]
+        anno_precedente = df[df["anno"] == anno - 1]
         if not anno_precedente.empty:
             utile_precedente = anno_precedente["utile_netto"].values[0]
             if utile_precedente != 0 and pd.notna(utile_precedente):
@@ -91,7 +90,7 @@ with tab1:
         if submitted:
             if ricavi == 0:
                 st.warning("⚠️ I ricavi devono essere maggiori di zero.")
-            elif anno in df_originale["anno"].values:
+            elif anno in df["anno"].values:
                 st.warning(f"⚠️ L'anno {anno} è già presente nei dati.")
             else:
                 nuova_riga = {
@@ -110,7 +109,7 @@ with tab1:
     st.dataframe(df)
 
     st.write("### 🔧 Modifica Dati Esistenti")
-    for i, row in df_originale.iterrows():
+    for i, row in df.iterrows():
         with st.expander(f"Anno {row['anno']}"):
             nuovo_ricavi = st.number_input(f"Ricavi (€) - {row['anno']}", value=float(row['ricavi']), step=1000.0, key=f"mod_ricavi_{i}")
             nuovo_costi = st.number_input(f"Costi (€) - {row['anno']}", value=float(row['costi']), step=1000.0, key=f"mod_costi_{i}")
@@ -143,7 +142,6 @@ with tab1:
                     st.error("❌ Errore nell'aggiornamento. Controlla Supabase.")
 
 # Resto del codice invariato (tab2, tab3, tab4)
-
 
 with tab2:
     if not df.empty:
