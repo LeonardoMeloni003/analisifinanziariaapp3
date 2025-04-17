@@ -8,7 +8,7 @@ import requests
 
 # --- CONFIGURAZIONE SUPABASE ---
 SUPABASE_URL = "https://fpblplgqvekuekorumkr.supabase.co"
-SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZwYmxwbGdxdmVrdWVrb3J1bWtyIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc0Mjk3NjQyMCwiZXhwIjoyMDU4NTUyNDIwfQ.fwP1Y1R29VXaOJPtWOcNdliOgiGqovF87Eg0ckRgUns"
 headers = {
     "apikey": SUPABASE_KEY,
     "Authorization": f"Bearer {SUPABASE_KEY}",
