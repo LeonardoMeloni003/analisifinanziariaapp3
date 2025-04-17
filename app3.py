@@ -71,12 +71,14 @@ with tab1:
 
     with st.form("form_inserimento"):
         anno = st.number_input("Anno", min_value=2000, max_value=2100, step=1)
+        mese = st.selectbox("Mese di riferimento", options=list(range(1, 13)), format_func=lambda x: datetime.date(1900, x, 1).strftime('%B'))
         ricavi = st.number_input("Ricavi (€)", min_value=0.0, step=1000.0)
         costi = st.number_input("Costi (€)", min_value=0.0, step=1000.0)
 
         utile = ricavi - costi
         margine = (utile / ricavi * 100) if ricavi else 0
 
+        # Calcolo crescita rispetto all'anno precedente
         anno_precedente = df_originale[df_originale["anno"] == anno - 1]
         if not anno_precedente.empty:
             utile_precedente = anno_precedente["utile_netto"].values[0]
@@ -87,7 +89,10 @@ with tab1:
         else:
             crescita = 0
 
-        st.info(f"Utile Netto: € {utile:,.2f} | Margine: {margine:.2f} % | Crescita: {crescita:.2f} %")
+        # Costruzione data nel formato YYYY-MM-01
+        data = f"{anno}-{mese:02d}-01"
+
+        st.info(f"Utile Netto: € {utile:,.2f} | Margine: {margine:.2f}% | Crescita: {crescita:.2f}%")
 
         submitted = st.form_submit_button("💾 Salva dati")
 
@@ -99,6 +104,7 @@ with tab1:
             else:
                 nuova_riga = {
                     "anno": anno,
+                    "data": data,
                     "ricavi": ricavi,
                     "costi": costi,
                     "utile_netto": utile,
@@ -113,7 +119,7 @@ with tab1:
     st.dataframe(df)
 
     st.write("### 🔧 Modifica Dati Esistenti")
-    for i, row in df_originale.iterrows():
+    for i, row in df.iterrows():
         with st.expander(f"Anno {row['anno']}"):
             nuovo_ricavi = st.number_input(f"Ricavi (€) - {row['anno']}", value=float(row['ricavi']), step=1000.0, key=f"mod_ricavi_{i}")
             nuovo_costi = st.number_input(f"Costi (€) - {row['anno']}", value=float(row['costi']), step=1000.0, key=f"mod_costi_{i}")
@@ -129,25 +135,13 @@ with tab1:
                     "utile_netto": nuovo_utile,
                     "margine": nuovo_margine
                 }
-                anno_int = int(row["anno"])
-                st.write("🛠️ Sto aggiornando l'anno:", anno_int)
-                st.write("🔁 Nuovi dati:", updated_row)
-                res = requests.patch(
-                    f"{SUPABASE_URL}/rest/v1/dati_finanziari?anno=eq.{anno_int}",
+                requests.patch(
+                    f"{SUPABASE_URL}/rest/v1/dati_finanziari?anno=eq.{int(row['anno'])}",
                     headers=headers,
                     json=updated_row
                 )
-                st.write("📡 Codice risposta:", res.status_code)
-                st.write("📄 Risposta server:", res.text)
-                if res.status_code == 204:
-                    st.success(f"Dati aggiornati per l'anno {anno_int}")
-                    st.rerun()
-                else:
-                    st.error("❌ Errore nell'aggiornamento. Controlla Supabase.")
-
-# Resto del codice invariato (tab2, tab3, tab4)
-
-
+                st.success(f"Dati aggiornati per l'anno {row['anno']}")
+                st.rerun()
 
 with tab2:
     if not df.empty:
