@@ -72,7 +72,11 @@ with tab1:
 
     with st.form("form_inserimento"):
         anno = st.number_input("Anno", min_value=2000, max_value=2100, step=1)
-        mese = st.selectbox("Mese di riferimento", options=list(range(1, 13)), format_func=lambda x: datetime.date(1900, x, 1).strftime('%B'))
+
+        # Mese opzionale con nomi in italiano
+        mesi_italiani = ["(opzionale)", "Gennaio", "Febbraio", "Marzo", "Aprile", "Maggio", "Giugno", "Luglio", "Agosto", "Settembre", "Ottobre", "Novembre", "Dicembre"]
+        mese_selezionato = st.selectbox("Mese di riferimento (opzionale)", options=range(0, 13), format_func=lambda x: mesi_italiani[x])
+
         ricavi = st.number_input("Ricavi (€)", min_value=0.0, step=1000.0)
         costi = st.number_input("Costi (€)", min_value=0.0, step=1000.0)
 
@@ -90,8 +94,8 @@ with tab1:
         else:
             crescita = 0
 
-        # Costruzione data nel formato YYYY-MM-01
-        data = f"{anno}-{mese:02d}-01"
+        # Solo se il mese è selezionato, costruisce la data
+        data = f"{anno}-{mese_selezionato:02d}-01" if mese_selezionato != 0 else None
 
         st.info(f"Utile Netto: € {utile:,.2f} | Margine: {margine:.2f}% | Crescita: {crescita:.2f}%")
 
@@ -105,13 +109,15 @@ with tab1:
             else:
                 nuova_riga = {
                     "anno": anno,
-                    "data": data,
                     "ricavi": ricavi,
                     "costi": costi,
                     "utile_netto": utile,
                     "margine": margine,
                     "crescita": crescita
                 }
+                if data:
+                    nuova_riga["data"] = data
+
                 requests.post(f'{SUPABASE_URL}/rest/v1/dati_finanziari', headers=headers, json=nuova_riga)
                 st.success("✅ Dati salvati con successo")
                 st.rerun()
