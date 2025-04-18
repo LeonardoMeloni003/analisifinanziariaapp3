@@ -144,9 +144,10 @@ with tab1:
            # Pulsante per eliminare i dati
 if st.button(f"❌ Elimina Dati - {row['anno']}"):
     try:
-        res = requests.delete(
-            f"{SUPABASE_URL}/rest/v1/dati_finanziari?anno=eq.{row['anno']}",
-            headers=headers
+        anno_int = int(row['anno'])  # Assicurati che l'anno sia un intero
+res = requests.delete(
+    f"{SUPABASE_URL}/rest/v1/dati_finanziari?anno=eq.{anno_int}",
+    headers=headers
         )
         # Log per debugging
         st.write(f"🔄 Richiesta DELETE inviata per l'anno {row['anno']}")
