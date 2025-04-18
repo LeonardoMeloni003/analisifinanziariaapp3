@@ -309,7 +309,8 @@ def load_data_mensili():
         return pd.DataFrame()
 
 df_mensile = load_data_mensili()
-""with tab5:
+
+with tab5:
     st.subheader("📆 Inserimento e analisi mensile")
 
     with st.form("form_mensile"):
