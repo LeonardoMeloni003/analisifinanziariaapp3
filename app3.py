@@ -140,29 +140,32 @@ with tab1:
                     st.rerun()
                 else:
                     st.error("❌ Errore nell'aggiornamento. Controlla Supabase.")
-
-         # Pulsante per eliminare i dati
+# Pulsante per eliminare i dati
 if st.button(f"❌ Elimina Dati - {row['anno']}"):
     try:
         anno_int = int(row['anno'])  # Assicurati che l'anno sia un intero
         st.write(f"🔄 Richiesta DELETE inviata per l'anno {anno_int}.")
         
-        res = requests.delete(
-            f"{SUPABASE_URL}/rest/v1/dati_finanziari?anno=eq.{anno_int}",
-            headers=headers
-        )
+        # Elimina prima i dati più vecchi
+        anni_da_eliminare = sorted(df_originale['anno'].unique().tolist())
         
-        st.write("📡 Codice risposta:", res.status_code)
-        st.write("📄 Risposta server:", res.text)
+        for anno in anni_da_eliminare:
+            res = requests.delete(
+                f"{SUPABASE_URL}/rest/v1/dati_finanziari?anno=eq.{anno}",
+                headers=headers
+            )
+            st.write(f"📡 Codice risposta per l'anno {anno}:", res.status_code)
+            st.write(f"📄 Risposta server per l'anno {anno}:", res.text)
+            
+            if res.status_code == 204:
+                st.success(f"Dati per l'anno {anno} eliminati con successo.")
+            else:
+                st.error(f"❌ Errore nell'eliminazione dei dati per l'anno {anno}.")
         
-        if res.status_code == 204:
-            st.success(f"Dati per l'anno {anno_int} eliminati con successo.")
-            st.rerun()
-        else:
-            st.error("❌ Errore nell'eliminazione dei dati. Controlla Supabase.")
+        st.rerun()
+
     except Exception as e:
         st.error(f"❌ Errore durante la richiesta DELETE: {str(e)}")
- 
 
 with tab2:
     if not df.empty:
