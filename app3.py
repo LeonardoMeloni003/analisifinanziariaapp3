@@ -68,63 +68,86 @@ tab1, tab2, tab3, tab4 = st.tabs(["📥 Inserimento", "📊 Dashboard", "📈 Gr
 
 with tab1:
     st.subheader("Inserimento Dati")
-with st.form("form_inserimento"):
-    col1, col2 = st.columns(2)
-    with col1:
+
+    with st.form("form_inserimento"):
         anno = st.number_input("Anno", min_value=2000, max_value=2100, step=1)
-    with col2:
-        elimina = st.form_submit_button("❌ Elimina Dati")
+        ricavi = st.number_input("Ricavi (€)", min_value=0.0, step=1000.0)
+        costi = st.number_input("Costi (€)", min_value=0.0, step=1000.0)
 
-    ricavi = st.number_input("Ricavi (€)", min_value=0.0, step=1000.0)
-    costi = st.number_input("Costi (€)", min_value=0.0, step=1000.0)
+        utile = ricavi - costi
+        margine = (utile / ricavi * 100) if ricavi else 0
 
-    utile = ricavi - costi
-    margine = (utile / ricavi * 100) if ricavi else 0
-
-    anno_precedente = df_originale[df_originale["anno"] == anno - 1]
-    if not anno_precedente.empty:
-        utile_precedente = anno_precedente["utile_netto"].values[0]
-        if utile_precedente != 0 and pd.notna(utile_precedente):
-            crescita = ((utile - utile_precedente) / utile_precedente) * 100
+        anno_precedente = df_originale[df_originale["anno"] == anno - 1]
+        if not anno_precedente.empty:
+            utile_precedente = anno_precedente["utile_netto"].values[0]
+            if utile_precedente != 0 and pd.notna(utile_precedente):
+                crescita = ((utile - utile_precedente) / utile_precedente) * 100
+            else:
+                crescita = 0
         else:
             crescita = 0
-    else:
-        crescita = 0
 
-    st.info(f"Utile Netto: € {utile:,.2f} | Margine: {margine:.2f} % | Crescita: {crescita:.2f} %")
+        st.info(f"Utile Netto: € {utile:,.2f} | Margine: {margine:.2f} % | Crescita: {crescita:.2f} %")
 
-    salva = st.form_submit_button("💾 Salva dati")
+        submitted = st.form_submit_button("💾 Salva dati")
 
-    if salva:
-        if ricavi == 0:
-            st.warning("⚠️ I ricavi devono essere maggiori di zero.")
-        elif anno in df_originale["anno"].values:
-            st.warning(f"⚠️ L'anno {anno} è già presente nei dati.")
-        else:
-            nuova_riga = {
-                "anno": anno,
-                "ricavi": ricavi,
-                "costi": costi,
-                "utile_netto": utile,
-                "margine": margine,
-                "crescita": crescita
-            }
-            requests.post(f'{SUPABASE_URL}/rest/v1/dati_finanziari', headers=headers, json=nuova_riga)
-            st.success("✅ Dati salvati con successo")
-            st.rerun()
+        if submitted:
+            if ricavi == 0:
+                st.warning("⚠️ I ricavi devono essere maggiori di zero.")
+            elif anno in df_originale["anno"].values:
+                st.warning(f"⚠️ L'anno {anno} è già presente nei dati.")
+            else:
+                nuova_riga = {
+                    "anno": anno,
+                    "ricavi": ricavi,
+                    "costi": costi,
+                    "utile_netto": utile,
+                    "margine": margine,
+                    "crescita": crescita
+                }
+                requests.post(f'{SUPABASE_URL}/rest/v1/dati_finanziari', headers=headers, json=nuova_riga)
+                st.success("✅ Dati salvati con successo")
+                st.rerun()
 
-    if elimina:
-        res = requests.delete(
-            f"{SUPABASE_URL}/rest/v1/dati_finanziari?anno=eq.{int(anno)}",
-            headers=headers
-        )
-        if res.status_code == 204:
-            st.success(f"✅ Dati per l'anno {int(anno)} eliminati con successo.")
-            st.rerun()
-        else:
-            st.error("❌ Errore nell'eliminazione dei dati.")
+    st.write("### 📋 Dati attualmente salvati")
+    st.dataframe(df)
 
-                
+    st.write("### 🔧 Modifica Dati Esistenti")
+    for i, row in df_originale.iterrows():
+        with st.expander(f"Anno {row['anno']}"):
+            nuovo_ricavi = st.number_input(f"Ricavi (€) - {row['anno']}", value=float(row['ricavi']), step=1000.0, key=f"mod_ricavi_{i}")
+            nuovo_costi = st.number_input(f"Costi (€) - {row['anno']}", value=float(row['costi']), step=1000.0, key=f"mod_costi_{i}")
+
+            nuovo_utile = nuovo_ricavi - nuovo_costi
+            nuovo_margine = (nuovo_utile / nuovo_ricavi * 100) if nuovo_ricavi else 0
+            st.info(f"Utile: €{nuovo_utile:,.2f} | Margine: {nuovo_margine:.2f}%")
+
+            if st.button(f"💾 Salva Modifiche - {row['anno']}"):
+                updated_row = {
+                    "ricavi": nuovo_ricavi,
+                    "costi": nuovo_costi,
+                    "utile_netto": nuovo_utile,
+                    "margine": nuovo_margine
+                }
+                anno_int = int(row["anno"])
+                st.write("🛠️ Sto aggiornando l'anno:", anno_int)
+                st.write("🔁 Nuovi dati:", updated_row)
+                res = requests.patch(
+                    f"{SUPABASE_URL}/rest/v1/dati_finanziari?anno=eq.{anno_int}",
+                    headers=headers,
+                    json=updated_row
+                )
+                st.write("📡 Codice risposta:", res.status_code)
+                st.write("📄 Risposta server:", res.text)
+                if res.status_code == 204:
+                    st.success(f"Dati aggiornati per l'anno {anno_int}")
+                    st.rerun()
+                else:
+                    st.error("❌ Errore nell'aggiornamento. Controlla Supabase.")
+
+# Resto del codice invariato (tab2, tab3, tab4)
+
+
 with tab2:
     if not df.empty:
         df = df.sort_values("anno")
