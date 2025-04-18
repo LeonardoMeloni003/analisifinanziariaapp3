@@ -309,7 +309,7 @@ def load_data_mensili():
         return pd.DataFrame()
 
 df_mensile = load_data_mensili()
-with tab5:
+""with tab5:
     st.subheader("📆 Inserimento e analisi mensile")
 
     with st.form("form_mensile"):
@@ -346,43 +346,44 @@ with tab5:
     st.write("### 📋 Dati mensili registrati")
     st.dataframe(df_mensile)
 
-    # Modifica dati mensili esistenti
-    st.write("### 🔧 Modifica Dati Mensili Esistenti")
-    for i, row in df_mensile.iterrows():
-        with st.expander(f"{mesi_italiani[row['mese'] - 1]} {row['anno']}"):
-            nuovo_ricavi_mens = st.number_input(f"Ricavi - {mesi_italiani[row['mese'] - 1]} {row['anno']}", value=float(row['ricavi_mensili']), step=100.0, key=f"mod_ricavi_mens_{i}")
-            nuovo_costi_mens = st.number_input(f"Costi - {mesi_italiani[row['mese'] - 1]} {row['anno']}", value=float(row['costi_mensili']), step=100.0, key=f"mod_costi_mens_{i}")
-
-            nuovo_utile_mens = nuovo_ricavi_mens - nuovo_costi_mens
-            nuovo_margine_mens = (nuovo_utile_mens / nuovo_ricavi_mens * 100) if nuovo_ricavi_mens else 0
-            st.info(f"Utile: €{nuovo_utile_mens:,.2f} | Margine: {nuovo_margine_mens:.2f}%")
-
-            if st.button(f"💾 Salva Modifiche - {mesi_italiani[row['mese'] - 1]} {row['anno']}", key=f"save_mens_{i}"):
-                updated_row = {
-                    "ricavi_mensili": nuovo_ricavi_mens,
-                    "costi_mensili": nuovo_costi_mens,
-                    "utile_netto_mensile": nuovo_utile_mens,
-                    "margine_mensile": nuovo_margine_mens
-                }
-                data_str = row['data'][:10]  # formato YYYY-MM-DD
-                res = requests.patch(
-                    f"{SUPABASE_URL}/rest/v1/dati_mensili?data=eq.{data_str}",
-                    headers=headers,
-                    json=updated_row
-                )
-                if res.status_code == 204:
-                    st.success(f"Dati aggiornati per {mesi_italiani[row['mese'] - 1]} {row['anno']}")
-                    st.rerun()
-                else:
-                    st.error("❌ Errore nell'aggiornamento. Controlla Supabase.")
-
-    # Grafico mensile
     if not df_mensile.empty:
-        st.write("### 📊 Grafico utile netto mensile")
-        df_mensile["mese_nome"] = df_mensile["data"].dt.strftime('%b %Y')
-        fig_mensile, ax = plt.subplots()
-        ax.bar(df_mensile["mese_nome"], df_mensile["utile_netto_mensile"], color='green')
-        ax.set_ylabel("Utile Netto (€)")
-        ax.set_title("Andamento utile netto mensile")
-        plt.xticks(rotation=45)
-        st.pyplot(fig_mensile)
+        st.write("### 🔧 Modifica o elimina dati esistenti")
+        for i, row in df_mensile.iterrows():
+            with st.expander(f"{mesi_italiani[row['mese'] - 1]} {row['anno']}"):
+                nuovo_ricavi = st.number_input(f"Ricavi (€) - {row['mese']}/{row['anno']}", value=float(row['ricavi_mensili']), step=100.0, key=f"mod_ricavi_mens_{i}")
+                nuovo_costi = st.number_input(f"Costi (€) - {row['mese']}/{row['anno']}", value=float(row['costi_mensili']), step=100.0, key=f"mod_costi_mens_{i}")
+
+                nuovo_utile = nuovo_ricavi - nuovo_costi
+                nuovo_margine = (nuovo_utile / nuovo_ricavi * 100) if nuovo_ricavi else 0
+
+                st.info(f"Utile: €{nuovo_utile:,.2f} | Margine: {nuovo_margine:.2f}%")
+
+                if st.button(f"💾 Salva Modifiche - {row['mese']}_{row['anno']}", key=f"btn_mod_{i}"):
+                    updated_row = {
+                        "ricavi_mensili": nuovo_ricavi,
+                        "costi_mensili": nuovo_costi,
+                        "utile_netto_mensile": nuovo_utile,
+                        "margine_mensile": nuovo_margine
+                    }
+                    st.write("🛠️ Sto aggiornando:", row['data'])
+                    res = requests.patch(
+                        f"{SUPABASE_URL}/rest/v1/dati_mensili?data=eq.{row['data']}",
+                        headers=headers,
+                        json=updated_row
+                    )
+                    if res.status_code == 204:
+                        st.success(f"Dati aggiornati per {row['mese']}/{row['anno']}")
+                        st.rerun()
+                    else:
+                        st.error("❌ Errore nell'aggiornamento.")
+
+                if st.button(f"🗑️ Elimina - {row['mese']}_{row['anno']}", key=f"btn_del_{i}"):
+                    res = requests.delete(
+                        f"{SUPABASE_URL}/rest/v1/dati_mensili?data=eq.{row['data']}",
+                        headers=headers
+                    )
+                    if res.status_code == 204:
+                        st.success(f"Dati eliminati per {row['mese']}/{row['anno']}")
+                        st.rerun()
+                    else:
+                        st.error("❌ Errore nell'eliminazione.")
