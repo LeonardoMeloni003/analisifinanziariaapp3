@@ -364,7 +364,7 @@ with tab5:
     st.write("### 📋 Dati mensili salvati")
     st.dataframe(df)
 
-    st.write("### 🔧 Modifica Dati Mensili Esistenti")
+    st.write("### 🔧 Modifica o Elimina Dati Mensili Esistenti")
     if not df.empty and "anno" in df.columns and "mese" in df.columns:
         for i, row in df.iterrows():
             with st.expander(f"{mesi_italiani[row['mese'] - 1]} {row['anno']}"):
@@ -375,24 +375,40 @@ with tab5:
                 nuovo_margine_mensile = (nuovo_utile_mensile / nuovo_ricavi_mensili * 100) if nuovo_ricavi_mensili else 0
                 st.info(f"Utile: €{nuovo_utile_mensile:,.2f} | Margine: {nuovo_margine_mensile:.2f}%")
 
-                if st.button(f"💾 Salva Modifiche - {mesi_italiani[row['mese'] - 1]} {row['anno']}"):
-                    updated_row = {
-                        "ricavi_mensili": nuovo_ricavi_mensili,
-                        "costi_mensili": nuovo_costi_mensili,
-                        "utile_netto_mensile": nuovo_utile_mensile,
-                        "margine_mensile": nuovo_margine_mensile
-                    }
-                    anno_int = int(row["anno"])
-                    mese_int = int(row["mese"])
-                    res = requests.patch(
-                        f"{SUPABASE_URL}/rest/v1/dati_mensili?anno=eq.{anno_int}&mese=eq.{mese_int}",
-                        headers=headers,
-                        json=updated_row
-                    )
-                    if res.status_code == 204:
-                        st.success(f"Dati aggiornati per {mesi_italiani[mese_int - 1]} {anno_int}")
-                        st.rerun()
-                    else:
-                        st.error("❌ Errore nell'aggiornamento. Controlla Supabase.")
+                col1, col2 = st.columns(2)
+
+                with col1:
+                    if st.button(f"💾 Salva Modifiche - {mesi_italiani[row['mese'] - 1]} {row['anno']}"):
+                        updated_row = {
+                            "ricavi_mensili": nuovo_ricavi_mensili,
+                            "costi_mensili": nuovo_costi_mensili,
+                            "utile_netto_mensile": nuovo_utile_mensile,
+                            "margine_mensile": nuovo_margine_mensile
+                        }
+                        anno_int = int(row["anno"])
+                        mese_int = int(row["mese"])
+                        res = requests.patch(
+                            f"{SUPABASE_URL}/rest/v1/dati_mensili?anno=eq.{anno_int}&mese=eq.{mese_int}",
+                            headers=headers,
+                            json=updated_row
+                        )
+                        if res.status_code == 204:
+                            st.success(f"Dati aggiornati per {mesi_italiani[mese_int - 1]} {anno_int}")
+                            st.rerun()
+                        else:
+                            st.error("❌ Errore nell'aggiornamento. Controlla Supabase.")
+
+                with col2:
+                    if st.button(f"🗑️ Elimina - {mesi_italiani[row['mese'] - 1]} {row['anno']}"):
+                        res = requests.delete(
+                            f"{SUPABASE_URL}/rest/v1/dati_mensili?anno=eq.{int(row['anno'])}&mese=eq.{int(row['mese'])}",
+                            headers=headers
+                        )
+                        if res.status_code == 204:
+                            st.success(f"🗑️ Dato mensile {mesi_italiani[row['mese'] - 1]} {row['anno']} eliminato con successo")
+                            st.rerun()
+                        else:
+                            st.error("❌ Errore nell'eliminazione dei dati. Controlla Supabase.")
     else:
-        st.warning("⚠️ Nessun dato mensile disponibile da modificare.")
+        st.warning("⚠️ Nessun dato mensile disponibile da modificare o eliminare.")
+
