@@ -316,10 +316,10 @@ with tab5:
     with st.form("form_mensile"):
         anno_mese = st.number_input("Anno", min_value=2000, max_value=2100, step=1, key="anno_mese")
         mesi_italiani = ["Gennaio", "Febbraio", "Marzo", "Aprile", "Maggio", "Giugno", "Luglio", "Agosto", "Settembre", "Ottobre", "Novembre", "Dicembre"]
-        mese = st.selectbox("Mese", options=range(1, 13), format_func=lambda x: mesi_italiani[x - 1], key="mese_mensile")
+        mese = st.selectbox("Mese", options=range(1, 13), format_func=lambda x: mesi_italiani[x - 1])
 
-        ricavi_mens = st.number_input("Ricavi mensili (€)", min_value=0.0, step=100.0, key="ricavi_mens")
-        costi_mens = st.number_input("Costi mensili (€)", min_value=0.0, step=100.0, key="costi_mens")
+        ricavi_mens = st.number_input("Ricavi mensili (€)", min_value=0.0, step=100.0)
+        costi_mens = st.number_input("Costi mensili (€)", min_value=0.0, step=100.0)
 
         utile_mens = ricavi_mens - costi_mens
         margine_mens = (utile_mens / ricavi_mens * 100) if ricavi_mens else 0
@@ -347,43 +347,44 @@ with tab5:
     st.write("### 📋 Dati mensili registrati")
     st.dataframe(df_mensile)
 
-    st.write("### ✏️ Modifica o elimina dati esistenti")
-    for i, row in df_mensile.iterrows():
-        with st.expander(f"{mesi_italiani[row['mese'] - 1]} {row['anno']}"):
-            nuovo_ricavi = st.number_input("Ricavi (€)", value=float(row["ricavi_mensili"]), step=100.0, key=f"mod_ricavi_m_{i}")
-            nuovo_costi = st.number_input("Costi (€)", value=float(row["costi_mensili"]), step=100.0, key=f"mod_costi_m_{i}")
+    if not df_mensile.empty:
+        st.write("### 🔧 Modifica o elimina dati esistenti")
+        for i, row in df_mensile.iterrows():
+            with st.expander(f"{mesi_italiani[row['mese'] - 1]} {row['anno']}"):
+                nuovo_ricavi = st.number_input(f"Ricavi (€) - {row['mese']}/{row['anno']}", value=float(row['ricavi_mensili']), step=100.0, key=f"mod_ricavi_mens_{i}")
+                nuovo_costi = st.number_input(f"Costi (€) - {row['mese']}/{row['anno']}", value=float(row['costi_mensili']), step=100.0, key=f"mod_costi_mens_{i}")
 
-            nuovo_utile = nuovo_ricavi - nuovo_costi
-            nuovo_margine = (nuovo_utile / nuovo_ricavi * 100) if nuovo_ricavi else 0
+                nuovo_utile = nuovo_ricavi - nuovo_costi
+                nuovo_margine = (nuovo_utile / nuovo_ricavi * 100) if nuovo_ricavi else 0
 
-            col1, col2 = st.columns(2)
-            with col1:
-                if st.button(f"💾 Salva Modifiche - {i}"):
+                st.info(f"Utile: €{nuovo_utile:,.2f} | Margine: {nuovo_margine:.2f}%")
+
+                if st.button(f"💾 Salva Modifiche - {row['mese']}_{row['anno']}", key=f"btn_mod_{i}"):
                     updated_row = {
                         "ricavi_mensili": nuovo_ricavi,
                         "costi_mensili": nuovo_costi,
                         "utile_netto_mensile": nuovo_utile,
                         "margine_mensile": nuovo_margine
                     }
+                    st.write("🛠️ Sto aggiornando:", row['data'])
                     res = requests.patch(
-                        f"{SUPABASE_URL}/rest/v1/dati_mensili?anno=eq.{row['anno']}&mese=eq.{row['mese']}",
+                        f"{SUPABASE_URL}/rest/v1/dati_mensili?data=eq.{row['data']}",
                         headers=headers,
                         json=updated_row
                     )
                     if res.status_code == 204:
-                        st.success("✅ Dati aggiornati")
+                        st.success(f"Dati aggiornati per {row['mese']}/{row['anno']}")
                         st.rerun()
                     else:
-                        st.error("❌ Errore nell'aggiornamento")
+                        st.error("❌ Errore nell'aggiornamento.")
 
-            with col2:
-                if st.button(f"🗑️ Elimina - {i}"):
+                if st.button(f"🗑️ Elimina - {row['mese']}_{row['anno']}", key=f"btn_del_{i}"):
                     res = requests.delete(
-                        f"{SUPABASE_URL}/rest/v1/dati_mensili?anno=eq.{row['anno']}&mese=eq.{row['mese']}",
+                        f"{SUPABASE_URL}/rest/v1/dati_mensili?data=eq.{row['data']}",
                         headers=headers
                     )
                     if res.status_code == 204:
-                        st.success("🗑️ Dati eliminati")
+                        st.success(f"Dati eliminati per {row['mese']}/{row['anno']}")
                         st.rerun()
                     else:
-                        st.error("❌ Errore nell'eliminazione")
+                        st.error("❌ Errore nell'eliminazione.")
