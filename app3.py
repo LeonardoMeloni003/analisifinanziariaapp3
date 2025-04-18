@@ -145,7 +145,21 @@ with tab1:
                 else:
                     st.error("❌ Errore nell'aggiornamento. Controlla Supabase.")
 
-# Resto del codice invariato (tab2, tab3, tab4)
+            # Pulsante per eliminare i dati
+            if st.button(f"❌ Elimina Dati - {row['anno']}"):
+                if st.confirm(f"Sei sicuro di voler eliminare i dati per l'anno {row['anno']}?"):
+                    res = requests.delete(
+                        f"{SUPABASE_URL}/rest/v1/dati_finanziari?anno=eq.{row['anno']}",
+                        headers=headers
+                    )
+                    if res.status_code == 204:
+                        st.success(f"Dati per l'anno {row['anno']} eliminati con successo.")
+                        st.rerun()
+                    else:
+                        st.error("❌ Errore nell'eliminazione dei dati. Controlla Supabase.")
+
+# Il resto del codice (tab2, tab3, tab4) rimane invariato
+
 
 
 with tab2:
