@@ -14,7 +14,7 @@ headers = {
     "Content-Type": "application/json"
 }
 
-PASSWORD = "analisi2024"
+PASSWORD = "analisiserramenti"
 
 def check_password():
     def password_entered():
