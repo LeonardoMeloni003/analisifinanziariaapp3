@@ -1,5 +1,5 @@
 import streamlit as st
-import pandas as pda
+import pandas as pd
 import matplotlib.pyplot as plt
 from io import BytesIO
 from matplotlib.backends.backend_pdf import PdfPages
@@ -23,38 +23,45 @@ def check_password():
         else:
             st.session_state["password_correct"] = False
     if "password_correct" not in st.session_state:
-        st.text_input("\U0001f512 Inserisci la password per accedere:", type="password", on_change=password_entered, key="password")
+        st.text_input("🔒 Inserisci la password per accedere:", type="password", on_change=password_entered, key="password")
         st.stop()
     elif not st.session_state["password_correct"]:
-        st.text_input("\u274c Password errata. Riprova:", type="password", on_change=password_entered, key="password")
+        st.text_input("❌ Password errata. Riprova:", type="password", on_change=password_entered, key="password")
         st.stop()
 
 check_password()
 st.set_page_config(page_title="Analisi Finanziaria", layout="wide")
 st.title("📊 Analisi Finanziaria - Serramenti Renato Orrù")
 
-# Selezione tipo di periodo
-filtro_periodo = st.sidebar.radio("Periodo da analizzare:", ["Tutti gli anni", "Ultimi 3 anni", "Ultimi 5 anni"])
-
 # Caricamento dati da Supabase
 def load_data():
     response = requests.get(f'{SUPABASE_URL}/rest/v1/dati_finanziari?select=*', headers=headers)
     if response.status_code == 200:
         df = pd.DataFrame(response.json())
-        df = df.drop(columns=["data"])  # Rimosso l'uso della colonna 'data'
-        df["anno"] = df["anno"].astype(int)  # Rimuove la parte decimale
+        df = df.drop(columns=["data"], errors='ignore')
+        df["anno"] = df["anno"].astype(int)
         return df.sort_values("anno") if not df.empty else pd.DataFrame()
     else:
         st.error("Errore nel recupero dati")
         return pd.DataFrame()
 
+# Carica dati completi
 df = load_data()
+df_originale = df.copy()
 
-# Applica filtro periodo
-if filtro_periodo == "Ultimi 3 anni":
-    df = df[df["anno"] >= df["anno"].max() - 2]
-elif filtro_periodo == "Ultimi 5 anni":
-    df = df[df["anno"] >= df["anno"].max() - 4]
+# Modifica selezione anni con multiselect
+anni_disponibili = sorted(df_originale["anno"].unique().tolist())
+anni_selezionati = st.sidebar.multiselect(
+    "Seleziona gli anni da analizzare:", 
+    options=anni_disponibili, 
+    default=anni_disponibili
+)
+
+# Applica filtro per visualizzazione, ma non per salvataggio
+if anni_selezionati:
+    df = df_originale[df_originale["anno"].isin(anni_selezionati)]
+else:
+    df = df_originale.copy()
 
 # --- TABS ---
 tab1, tab2, tab3, tab4 = st.tabs(["📥 Inserimento", "📊 Dashboard", "📈 Grafici", "📄 PDF"])
@@ -70,8 +77,7 @@ with tab1:
         utile = ricavi - costi
         margine = (utile / ricavi * 100) if ricavi else 0
 
-        # Recupera l'anno precedente per calcolare la crescita
-        anno_precedente = df[df["anno"] == anno - 1]
+        anno_precedente = df_originale[df_originale["anno"] == anno - 1]
         if not anno_precedente.empty:
             utile_precedente = anno_precedente["utile_netto"].values[0]
             if utile_precedente != 0 and pd.notna(utile_precedente):
@@ -79,7 +85,7 @@ with tab1:
             else:
                 crescita = 0
         else:
-            crescita = 0  # Nessuna crescita se non esiste l'anno precedente
+            crescita = 0
 
         st.info(f"Utile Netto: € {utile:,.2f} | Margine: {margine:.2f} % | Crescita: {crescita:.2f} %")
 
@@ -88,7 +94,7 @@ with tab1:
         if submitted:
             if ricavi == 0:
                 st.warning("⚠️ I ricavi devono essere maggiori di zero.")
-            elif anno in df["anno"].values:
+            elif anno in df_originale["anno"].values:
                 st.warning(f"⚠️ L'anno {anno} è già presente nei dati.")
             else:
                 nuova_riga = {
@@ -107,7 +113,7 @@ with tab1:
     st.dataframe(df)
 
     st.write("### 🔧 Modifica Dati Esistenti")
-    for i, row in df.iterrows():
+    for i, row in df_originale.iterrows():
         with st.expander(f"Anno {row['anno']}"):
             nuovo_ricavi = st.number_input(f"Ricavi (€) - {row['anno']}", value=float(row['ricavi']), step=1000.0, key=f"mod_ricavi_{i}")
             nuovo_costi = st.number_input(f"Costi (€) - {row['anno']}", value=float(row['costi']), step=1000.0, key=f"mod_costi_{i}")
@@ -123,34 +129,67 @@ with tab1:
                     "utile_netto": nuovo_utile,
                     "margine": nuovo_margine
                 }
-                requests.patch(
-                    f"{SUPABASE_URL}/rest/v1/dati_finanziari?anno=eq.{row['anno']}",
+                anno_int = int(row["anno"])
+                st.write("🛠️ Sto aggiornando l'anno:", anno_int)
+                st.write("🔁 Nuovi dati:", updated_row)
+                res = requests.patch(
+                    f"{SUPABASE_URL}/rest/v1/dati_finanziari?anno=eq.{anno_int}",
                     headers=headers,
                     json=updated_row
                 )
-                st.success(f"Dati aggiornati per l'anno {row['anno']}")
-                st.rerun()
+                st.write("📡 Codice risposta:", res.status_code)
+                st.write("📄 Risposta server:", res.text)
+                if res.status_code == 204:
+                    st.success(f"Dati aggiornati per l'anno {anno_int}")
+                    st.rerun()
+                else:
+                    st.error("❌ Errore nell'aggiornamento. Controlla Supabase.")
+
+# Resto del codice invariato (tab2, tab3, tab4)
+
+
 
 with tab2:
     if not df.empty:
+        df = df.sort_values("anno")
         df["crescita"] = [0] + [
             ((df["utile_netto"].iloc[i] - df["utile_netto"].iloc[i - 1]) / df["utile_netto"].iloc[i - 1]) * 100
             if df["utile_netto"].iloc[i - 1] != 0 and pd.notna(df["utile_netto"].iloc[i - 1])
             else 0
             for i in range(1, len(df))
         ]
+
         st.metric("📈 Media Utile Netto", f"€ {df['utile_netto'].mean():,.2f}")
         st.metric("📉 Margine medio %", f"{df['margine'].mean():.2f} %")
         st.metric("📊 Crescita media utile %", f"{df['crescita'].mean():.2f} %")
 
-        st.write("### 💬 Commento automatico")
-        if df["margine"].mean() > 20:
-            st.success("🟢 Margine buono")
-        elif df["margine"].mean() > 10:
-            st.info("🟡 Margine nella media")
-        else:
-            st.warning("🔴 Margine basso")
+        st.write("### 💬 Commento automatico approfondito")
+        ultimo_anno = df["anno"].max()
+        ultimi_3 = df.tail(3)
+        utile_trend = "🔄 Stabile"
+        if len(ultimi_3) >= 3:
+            if ultimi_3["utile_netto"].is_monotonic_increasing:
+                utile_trend = "🟢 In crescita costante"
+            elif ultimi_3["utile_netto"].is_monotonic_decreasing:
+                utile_trend = "🔴 In calo costante"
 
+        margine_medio = df["margine"].mean()
+        if margine_medio > 20:
+            margine_status = "🟢 Margine molto buono"
+        elif margine_medio > 10:
+            margine_status = "🟡 Margine nella media"
+        else:
+            margine_status = "🔴 Margine basso"
+
+        crescita_medio = df["crescita"].mean()
+        if crescita_medio > 5:
+            crescita_status = "📈 Buona crescita media"
+        elif crescita_medio > 0:
+            crescita_status = "➕ Crescita lieve"
+        else:
+            crescita_status = "📉 Attenzione: crescita negativa"
+
+        st.info(f"**Andamento Utile:** {utile_trend}\n\n**Margine medio:** {margine_status}\n\n**Crescita media utile netto:** {crescita_status}")
 with tab3:
     if not df.empty:
         st.write("### 📊 Grafico a Barre")
@@ -177,15 +216,63 @@ with tab3:
 
 with tab4:
     if not df.empty:
-        st.write("### 📄 Download PDF")
+        st.write("### 📄 Download Report")
+
+        # Download PDF
         buffer = BytesIO()
         with PdfPages(buffer) as pdf:
-            fig, ax = plt.subplots()
-            ax.axis("off")
-            table = ax.table(cellText=df.values, colLabels=df.columns, loc="center", cellLoc="center")
+            # Tabella
+            fig_table, ax_table = plt.subplots(figsize=(10, 2 + len(df) * 0.25))
+            ax_table.axis("off")
+            formatted_df = df.copy()
+            for col in formatted_df.select_dtypes(include=["float"]).columns:
+                formatted_df[col] = formatted_df[col].map(lambda x: f"{x:,.2f}")
+            table = ax_table.table(
+                cellText=formatted_df.values,
+                colLabels=formatted_df.columns,
+                loc="center",
+                cellLoc="center"
+            )
             table.auto_set_font_size(False)
             table.set_fontsize(8)
             table.scale(1, 1.5)
-            pdf.savefig(fig, bbox_inches="tight")
+            pdf.savefig(fig_table, bbox_inches="tight")
+            plt.close(fig_table)
+
+            # Grafico a Barre
+            fig_bar, ax_bar = plt.subplots()
+            index = range(len(df))
+            ax_bar.bar([i - 0.2 for i in index], df["ricavi"], width=0.2, label="Ricavi", color="blue")
+            ax_bar.bar(index, df["costi"], width=0.2, label="Costi", color="red")
+            ax_bar.bar([i + 0.2 for i in index], df["utile_netto"], width=0.2, label="Utile Netto", color="green")
+            ax_bar.set_xticks(index)
+            ax_bar.set_xticklabels(df["anno"], rotation=45)
+            ax_bar.set_xlabel("Anno")
+            ax_bar.set_ylabel("Valori (€)")
+            ax_bar.legend()
+            pdf.savefig(fig_bar, bbox_inches="tight")
+            plt.close(fig_bar)
+
+            # Grafico Lineare
+            fig_line, ax_line = plt.subplots()
+            ax_line.plot(df["anno"], df["utile_netto"], marker="o", color="green")
+            ax_line.set_xlabel("Anno")
+            ax_line.set_ylabel("Utile Netto (€)")
+            ax_line.set_title("Andamento Utile Netto")
+            ax_line.grid(True)
+            pdf.savefig(fig_line, bbox_inches="tight")
+            plt.close(fig_line)
+
         buffer.seek(0)
         st.download_button("📥 Scarica PDF", buffer, "report_analisi_finanziaria.pdf")
+
+        # Download Excel
+        excel_buffer = BytesIO()
+        df.to_excel(excel_buffer, index=False)
+        excel_buffer.seek(0)
+        st.download_button(
+            label="📊 Scarica Excel",
+            data=excel_buffer,
+            file_name="analisi_finanziaria.xlsx",
+            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        )

@@ -344,10 +344,10 @@ with tab5:
             st.success("✅ Dati mensili salvati con successo")
             st.rerun()
 
-    st.write("### 📋 Dati mensili registrati")
+       st.write("### 📋 Dati mensili registrati")
     st.dataframe(df_mensile)
 
-        st.write("### 🔧 Modifica o elimina Dati Mensili")
+    st.write("### 🔧 Modifica o elimina Dati Mensili")
     for i, row in df_mensile.iterrows():
         with st.expander(f"{mesi_italiani[row['mese'] - 1]} {row['anno']}"):
             nuovo_ricavi = st.number_input(f"Ricavi (€) - {row['mese_nome']}", value=float(row['ricavi_mensili']), step=100.0, key=f"mod_ricavi_mens_{i}")
@@ -388,3 +388,4 @@ with tab5:
                         st.rerun()
                     else:
                         st.error("❌ Errore nell'eliminazione dei dati")
+
