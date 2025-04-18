@@ -130,15 +130,11 @@ with tab1:
                     "margine": nuovo_margine
                 }
                 anno_int = int(row["anno"])
-                st.write("🛠️ Sto aggiornando l'anno:", anno_int)
-                st.write("🔁 Nuovi dati:", updated_row)
                 res = requests.patch(
                     f"{SUPABASE_URL}/rest/v1/dati_finanziari?anno=eq.{anno_int}",
                     headers=headers,
                     json=updated_row
                 )
-                st.write("📡 Codice risposta:", res.status_code)
-                st.write("📄 Risposta server:", res.text)
                 if res.status_code == 204:
                     st.success(f"Dati aggiornati per l'anno {anno_int}")
                     st.rerun()
@@ -147,19 +143,15 @@ with tab1:
 
             # Pulsante per eliminare i dati
             if st.button(f"❌ Elimina Dati - {row['anno']}"):
-                confirmation = st.selectbox(f"Sei sicuro di voler eliminare i dati per l'anno {row['anno']}?", ['No', 'Sì'])
-                if confirmation == 'Sì':
-                    res = requests.delete(
-                        f"{SUPABASE_URL}/rest/v1/dati_finanziari?anno=eq.{row['anno']}",
-                        headers=headers
-                    )
-                    if res.status_code == 204:
-                        st.success(f"Dati per l'anno {row['anno']} eliminati con successo.")
-                        st.rerun()
-                    else:
-                        st.error("❌ Errore nell'eliminazione dei dati. Controlla Supabase.")
-
-
+                res = requests.delete(
+                    f"{SUPABASE_URL}/rest/v1/dati_finanziari?anno=eq.{row['anno']}",
+                    headers=headers
+                )
+                if res.status_code == 204:
+                    st.success(f"Dati per l'anno {row['anno']} eliminati con successo.")
+                    st.rerun()
+                else:
+                    st.error("❌ Errore nell'eliminazione dei dati. Controlla Supabase.")
 with tab2:
     if not df.empty:
         df = df.sort_values("anno")
