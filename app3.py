@@ -344,7 +344,7 @@ with tab5:
             st.success("✅ Dati mensili salvati con successo")
             st.rerun()
 
-       st.write("### 📋 Dati mensili registrati")
+    st.write("### 📋 Dati mensili registrati")
     st.dataframe(df_mensile)
 
     st.write("### 🔧 Modifica o elimina Dati Mensili")
@@ -388,4 +388,3 @@ with tab5:
                         st.rerun()
                     else:
                         st.error("❌ Errore nell'eliminazione dei dati")
-
