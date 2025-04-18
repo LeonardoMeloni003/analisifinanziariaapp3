@@ -409,7 +409,9 @@ with tab5:
 
             with col2:
                 if st.button(f"🗑️ Elimina - {mesi_italiani[row['mese'] - 1]} {row['anno']}", key=f"delete_{i}"):
-                    data_str = row['data'][:10]
+                    data_val = row['data']
+                    data_str = data_val.strftime('%Y-%m-%d') if hasattr(data_val, 'strftime') else str(data_val)[:10]
+
                     res = requests.delete(
                         f"{SUPABASE_URL}/rest/v1/dati_mensili?data=eq.{data_str}",
                         headers=headers
