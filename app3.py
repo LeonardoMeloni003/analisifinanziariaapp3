@@ -313,10 +313,28 @@ df_mensile = load_data_mensili()
 with tab5:
     st.subheader("📆 Inserimento e analisi mensile")
 
-    # Modulo di inserimento dei dati mensili
+    def carica_dati_mensili():
+        try:
+            response = requests.get(f'{SUPABASE_URL}/rest/v1/dati_mensili', headers=headers)
+            if response.status_code == 200:
+                data = response.json()
+                df = pd.DataFrame(data)
+                if not df.empty and 'data' in df.columns:
+                    df['data'] = pd.to_datetime(df['data'], errors='coerce')
+                return df
+            else:
+                st.error(f"Errore nel caricamento dei dati: {response.status_code}")
+                return pd.DataFrame()
+        except Exception as e:
+            st.error(f"Errore nella connessione a Supabase: {e}")
+            return pd.DataFrame()
+
+    df_mensile = carica_dati_mensili()
+    mesi_italiani = ["Gennaio", "Febbraio", "Marzo", "Aprile", "Maggio", "Giugno",
+                     "Luglio", "Agosto", "Settembre", "Ottobre", "Novembre", "Dicembre"]
+
     with st.form("form_mensile"):
         anno_mese = st.number_input("Anno", min_value=2000, max_value=2100, step=1, key="anno_mese")
-        mesi_italiani = ["Gennaio", "Febbraio", "Marzo", "Aprile", "Maggio", "Giugno", "Luglio", "Agosto", "Settembre", "Ottobre", "Novembre", "Dicembre"]
         mese = st.selectbox("Mese", options=range(1, 13), format_func=lambda x: mesi_italiani[x - 1])
 
         ricavi_mens = st.number_input("Ricavi mensili (€)", min_value=0.0, step=100.0)
@@ -324,15 +342,13 @@ with tab5:
 
         utile_mens = ricavi_mens - costi_mens
         margine_mens = (utile_mens / ricavi_mens * 100) if ricavi_mens else 0
-
         data_mens = f"{anno_mese}-{mese:02d}-01"
 
         st.info(f"Utile netto mensile: € {utile_mens:,.2f} | Margine: {margine_mens:.2f}%")
-
         invia_mensile = st.form_submit_button("💾 Salva dati mensili")
 
         if invia_mensile:
-            nuova_riga_mensile = {
+            nuova_riga = {
                 "anno": anno_mese,
                 "mese": mese,
                 "data": data_mens,
@@ -341,59 +357,65 @@ with tab5:
                 "utile_netto_mensile": utile_mens,
                 "margine_mensile": margine_mens
             }
-            # Salvataggio su Supabase
-            response = requests.post(f'{SUPABASE_URL}/rest/v1/dati_mensili', headers=headers, json=nuova_riga_mensile)
-            if response.status_code == 201:
+            res = requests.post(f"{SUPABASE_URL}/rest/v1/dati_mensili", headers=headers, json=nuova_riga)
+            if res.status_code == 201:
                 st.success("✅ Dati mensili salvati con successo")
                 st.rerun()
             else:
-                st.error("❌ Errore nel salvataggio dei dati mensili.")
+                st.error(f"❌ Errore nel salvataggio: {res.text}")
 
-    # Visualizzazione dei dati mensili registrati
     st.write("### 📋 Dati mensili registrati")
-    df_mensile = carica_dati_mensili()  # Carica i dati dal database
     if not df_mensile.empty:
         st.dataframe(df_mensile)
+    else:
+        st.warning("Nessun dato mensile disponibile.")
 
-        # Modifica dati mensili esistenti
-        st.write("### 🔧 Modifica Dati Mensili Esistenti")
-        for i, row in df_mensile.iterrows():
-            with st.expander(f"{mesi_italiani[row['mese'] - 1]} {row['anno']}"):
-                nuovo_ricavi_mens = st.number_input(f"Ricavi - {mesi_italiani[row['mese'] - 1]} {row['anno']}", value=float(row['ricavi_mensili']), step=100.0, key=f"mod_ricavi_mens_{i}")
-                nuovo_costi_mens = st.number_input(f"Costi - {mesi_italiani[row['mese'] - 1]} {row['anno']}", value=float(row['costi_mensili']), step=100.0, key=f"mod_costi_mens_{i}")
+    st.write("### 🔧 Modifica Dati Mensili Esistenti")
+    for i, row in df_mensile.iterrows():
+        with st.expander(f"{mesi_italiani[row['mese'] - 1]} {row['anno']}"):
+            nuovo_ricavi = st.number_input(
+                f"Ricavi - {mesi_italiani[row['mese'] - 1]} {row['anno']}",
+                value=float(row['ricavi_mensili']), step=100.0, key=f"ricavi_{i}"
+            )
+            nuovo_costi = st.number_input(
+                f"Costi - {mesi_italiani[row['mese'] - 1]} {row['anno']}",
+                value=float(row['costi_mensili']), step=100.0, key=f"costi_{i}"
+            )
 
-                nuovo_utile_mens = nuovo_ricavi_mens - nuovo_costi_mens
-                nuovo_margine_mens = (nuovo_utile_mens / nuovo_ricavi_mens * 100) if nuovo_ricavi_mens else 0
-                st.info(f"Utile: €{nuovo_utile_mens:,.2f} | Margine: {nuovo_margine_mens:.2f}%")
+            nuovo_utile = nuovo_ricavi - nuovo_costi
+            nuovo_margine = (nuovo_utile / nuovo_ricavi * 100) if nuovo_ricavi else 0
+            st.info(f"Utile: €{nuovo_utile:,.2f} | Margine: {nuovo_margine:.2f}%")
 
-                if st.button(f"💾 Salva Modifiche - {mesi_italiani[row['mese'] - 1]} {row['anno']}", key=f"save_mens_{i}"):
-                    updated_row = {
-                        "ricavi_mensili": nuovo_ricavi_mens,
-                        "costi_mensili": nuovo_costi_mens,
-                        "utile_netto_mensile": nuovo_utile_mens,
-                        "margine_mensile": nuovo_margine_mens
+            col1, col2 = st.columns(2)
+            with col1:
+                if st.button(f"💾 Salva Modifiche - {mesi_italiani[row['mese'] - 1]} {row['anno']}", key=f"save_{i}"):
+                    data_str = row['data'][:10]
+                    aggiornamento = {
+                        "ricavi_mensili": nuovo_ricavi,
+                        "costi_mensili": nuovo_costi,
+                        "utile_netto_mensile": nuovo_utile,
+                        "margine_mensile": nuovo_margine
                     }
-                    data_str = row['data'][:10]  # formato YYYY-MM-DD
                     res = requests.patch(
                         f"{SUPABASE_URL}/rest/v1/dati_mensili?data=eq.{data_str}",
                         headers=headers,
-                        json=updated_row
+                        json=aggiornamento
                     )
                     if res.status_code == 204:
-                        st.success(f"Dati aggiornati per {mesi_italiani[row['mese'] - 1]} {row['anno']}")
+                        st.success("✅ Modifica salvata")
                         st.rerun()
                     else:
-                        st.error("❌ Errore nell'aggiornamento. Controlla Supabase.")
+                        st.error("❌ Errore nell'aggiornamento")
 
-                # Elimina dati mensili
-                if st.button(f"❌ Elimina Dati - {mesi_italiani[row['mese'] - 1]} {row['anno']}", key=f"delete_mens_{i}"):
-                    data_str = row['data'][:10]  # formato YYYY-MM-DD
+            with col2:
+                if st.button(f"🗑️ Elimina - {mesi_italiani[row['mese'] - 1]} {row['anno']}", key=f"delete_{i}"):
+                    data_str = row['data'][:10]
                     res = requests.delete(
                         f"{SUPABASE_URL}/rest/v1/dati_mensili?data=eq.{data_str}",
                         headers=headers
                     )
                     if res.status_code == 204:
-                        st.success(f"Dati eliminati per {mesi_italiani[row['mese'] - 1]} {row['anno']}")
+                        st.success("✅ Dati eliminati")
                         st.rerun()
                     else:
-                        st.error("❌ Errore nell'eliminazione dei dati. Controlla Supabase.")
+                        st.error("❌ Errore durante l'eliminazione")
