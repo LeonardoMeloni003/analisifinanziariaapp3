@@ -141,17 +141,27 @@ with tab1:
                 else:
                     st.error("❌ Errore nell'aggiornamento. Controlla Supabase.")
 
-            # Pulsante per eliminare i dati
-            if st.button(f"❌ Elimina Dati - {row['anno']}"):
-                res = requests.delete(
-                    f"{SUPABASE_URL}/rest/v1/dati_finanziari?anno=eq.{row['anno']}",
-                    headers=headers
-                )
-                if res.status_code == 204:
-                    st.success(f"Dati per l'anno {row['anno']} eliminati con successo.")
-                    st.rerun()
-                else:
-                    st.error("❌ Errore nell'eliminazione dei dati. Controlla Supabase.")
+           # Pulsante per eliminare i dati
+if st.button(f"❌ Elimina Dati - {row['anno']}"):
+    try:
+        res = requests.delete(
+            f"{SUPABASE_URL}/rest/v1/dati_finanziari?anno=eq.{row['anno']}",
+            headers=headers
+        )
+        # Log per debugging
+        st.write(f"🔄 Richiesta DELETE inviata per l'anno {row['anno']}")
+        st.write(f"📡 Codice risposta: {res.status_code}")
+        st.write(f"📄 Risposta server: {res.text}")
+
+        # Controlla se l'eliminazione è riuscita
+        if res.status_code == 204:
+            st.success(f"Dati per l'anno {row['anno']} eliminati con successo.")
+            st.rerun()
+        else:
+            st.error("❌ Errore nell'eliminazione dei dati. Controlla Supabase.")
+    except Exception as e:
+        st.error(f"❌ Errore nell'invio della richiesta di eliminazione: {e}")
+
 with tab2:
     if not df.empty:
         df = df.sort_values("anno")
