@@ -121,52 +121,42 @@ with tab1:
             nuovo_utile = nuovo_ricavi - nuovo_costi
             nuovo_margine = (nuovo_utile / nuovo_ricavi * 100) if nuovo_ricavi else 0
             st.info(f"Utile: €{nuovo_utile:,.2f} | Margine: {nuovo_margine:.2f}%")
+                        col1, col2 = st.columns(2)
 
-            if st.button(f"💾 Salva Modifiche - {row['anno']}"):
-                updated_row = {
-                    "ricavi": nuovo_ricavi,
-                    "costi": nuovo_costi,
-                    "utile_netto": nuovo_utile,
-                    "margine": nuovo_margine
-                }
-                anno_int = int(row["anno"])
-                res = requests.patch(
-                    f"{SUPABASE_URL}/rest/v1/dati_finanziari?anno=eq.{anno_int}",
-                    headers=headers,
-                    json=updated_row
-                )
-                if res.status_code == 204:
-                    st.success(f"Dati aggiornati per l'anno {anno_int}")
-                    st.rerun()
-                else:
-                    st.error("❌ Errore nell'aggiornamento. Controlla Supabase.")
-# Pulsante per eliminare i dati
-if st.button(f"❌ Elimina Dati - {row['anno']}"):
-    try:
-        anno_int = int(row['anno'])  # Assicurati che l'anno sia un intero
-        st.write(f"🔄 Richiesta DELETE inviata per l'anno {anno_int}.")
-        
-        # Elimina prima i dati più vecchi
-        anni_da_eliminare = sorted(df_originale['anno'].unique().tolist())
-        
-        for anno in anni_da_eliminare:
-            res = requests.delete(
-                f"{SUPABASE_URL}/rest/v1/dati_finanziari?anno=eq.{anno}",
-                headers=headers
-            )
-            st.write(f"📡 Codice risposta per l'anno {anno}:", res.status_code)
-            st.write(f"📄 Risposta server per l'anno {anno}:", res.text)
+            with col1:
+                if st.button(f"💾 Salva Modifiche - {row['anno']}", key=f"salva_{i}"):
+                    updated_row = {
+                        "ricavi": nuovo_ricavi,
+                        "costi": nuovo_costi,
+                        "utile_netto": nuovo_utile,
+                        "margine": nuovo_margine
+                    }
+                    anno_int = int(row["anno"])
+                    res = requests.patch(
+                        f"{SUPABASE_URL}/rest/v1/dati_finanziari?anno=eq.{anno_int}",
+                        headers=headers,
+                        json=updated_row
+                    )
+                    if res.status_code == 204:
+                        st.success(f"Dati aggiornati per l'anno {anno_int}")
+                        st.rerun()
+                    else:
+                        st.error("❌ Errore nell'aggiornamento. Controlla Supabase.")
+
+            with col2:
+                if st.button(f"❌ Elimina Dati - {row['anno']}", key=f"elimina_{i}"):
+                    anno_int = int(row['anno'])
+                    res = requests.delete(
+                        f"{SUPABASE_URL}/rest/v1/dati_finanziari?anno=eq.{anno_int}",
+                        headers=headers
+                    )
+                    if res.status_code == 204:
+                        st.success(f"Dati per l'anno {anno_int} eliminati con successo.")
+                        st.rerun()
+                    else:
+                        st.error("❌ Errore nell'eliminazione dei dati. Controlla Supabase.")
+
             
-            if res.status_code == 204:
-                st.success(f"Dati per l'anno {anno} eliminati con successo.")
-            else:
-                st.error(f"❌ Errore nell'eliminazione dei dati per l'anno {anno}.")
-        
-        st.rerun()
-
-    except Exception as e:
-        st.error(f"❌ Errore durante la richiesta DELETE: {str(e)}")
-
 with tab2:
     if not df.empty:
         df = df.sort_values("anno")
